@@ -1,0 +1,25 @@
+{
+  "Compute": ["local", "AWS", "GCloud"],
+      "Local": {
+          "CPU": "6 cores",
+          "RAM": "16 GB",
+          "GPU": "4 GB",
+          "queue_type": "Some Queuing Service"
+      },
+      "AWS": {
+          "CPU": "6 cores",
+          "RAM": "16 GB",
+          "GPU": "4 GB",
+          "queue_type": "Some Queuing Service",
+          "Number_of_workers": "15",
+          "Endpoints": {}
+      },
+      "GCloud": {
+          "CPU": "6 cores",
+          "RAM": "16 GB",
+          "GPU": "4 GB",
+          "queue_type": "Some Queuing Service",
+          "Number_of_workers": "15",
+          "Endpoints": {}
+      }
+}
