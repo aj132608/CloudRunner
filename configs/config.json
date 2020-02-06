@@ -12,7 +12,8 @@
           "GPU": "4 GB",
           "queue_type": "Some Queuing Service",
           "Number_of_workers": "15",
-          "Endpoints": {}
+          "Endpoints": {},
+          "Credentials": {}
       },
       "GCloud": {
           "CPU": "6 cores",
@@ -20,6 +21,7 @@
           "GPU": "4 GB",
           "queue_type": "Some Queuing Service",
           "Number_of_workers": "15",
-          "Endpoints": {}
+          "Endpoints": {},
+          "Credentials": {}
       }
 }
