@@ -1,5 +1,11 @@
 # Compute Engine
 ## Exploration <i><b>INCOMPLETE</i></b>
+
+---
+Credentials
+
+    export GOOGLE_APPLICATION_CREDENTIALS="/home/user/Downloads/[FILE_NAME].json"
+
 creating instance
 ---
 
@@ -70,3 +76,9 @@ Deploy
 
     gcloud app deploy
     gcloud app browse
+
+Big Query
+
+    pip install --upgrade google-cloud-bigquery
+
+    export GOOGLE_APPLICATION_CREDENTIALS="/home/gaurav/mineai/CloudRunner/GCLOUD/chinga_creds.json"
