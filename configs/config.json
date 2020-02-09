@@ -11,17 +11,13 @@
           "RAM": "16 GB",
           "GPU": "4 GB",
           "queue_type": "Some Queuing Service",
-          "Number_of_workers": "15",
-          "Endpoints": {},
-          "Credentials": {}
+          "Number_of_workers": "15"
       },
       "GCloud": {
           "CPU": "6 cores",
           "RAM": "16 GB",
           "GPU": "4 GB",
           "queue_type": "Some Queuing Service",
-          "Number_of_workers": "15",
-          "Endpoints": {},
-          "Credentials": {}
+          "Number_of_workers": "15"
       }
 }
