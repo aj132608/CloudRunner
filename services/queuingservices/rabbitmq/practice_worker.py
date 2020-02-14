@@ -34,6 +34,8 @@ class PracticeWorker:
     @staticmethod
     def queue_callback(ch, method, properties, body):
         print(f"body: {body}")
+        print("Done!")
+        ch.basic_ack(delivery_tag=method.delivery_tag)
 
     def create_sample_response(self, queue_name):
         self.channel.basic_qos(prefetch_count=1)
