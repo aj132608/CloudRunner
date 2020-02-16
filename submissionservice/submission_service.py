@@ -2,14 +2,22 @@ import calendar
 import time
 
 # put imports from other python classes here
+from servicecommon.parsers.config_parser import ConfigParser
 from services.queuingservices.rabbitmq.task_submit import TaskSubmit
 
 
 class SubmissionService:
 
-    def __init__(self, config_path):
+    def __init__(self, config_path, project_id):
+        """
+
+        :param config_path:
+        """
         self.config_path = config_path
-        self.config = None
+        self.config_parser = ConfigParser(self.config_path)
+        self.project_id = project_id
+
+        self.computes = self.config_parser.get_computing_environments()
 
     def connect_to_queue(self, queue_name=None):
         pass

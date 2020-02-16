@@ -1,23 +1,46 @@
 {
-  "Compute": ["local", "AWS", "GCloud"],
-      "Local": {
-          "CPU": "6 cores",
-          "RAM": "16 GB",
-          "GPU": "4 GB",
-          "queue_type": "Some Queuing Service"
-      },
-      "AWS": {
-          "CPU": "6 cores",
-          "RAM": "16 GB",
-          "GPU": "4 GB",
-          "queue_type": "Some Queuing Service",
-          "Number_of_workers": "15"
-      },
-      "GCloud": {
-          "CPU": "6 cores",
-          "RAM": "16 GB",
-          "GPU": "4 GB",
-          "queue_type": "Some Queuing Service",
-          "Number_of_workers": "15"
+  "compute": ["local", "AWS", "GCloud"],
+  "local": {
+      "CPU": 6,
+      "RAM": 16,
+      "queue_type": "local"
+  },
+  "AWS": {
+      "cpus": 6,
+      "ram": 16,
+      "gpus": 2,
+      "Number_of_workers": 2,
+      "env": {
+          "cdsm_aws_access_key": "AWS_ACCESS_KEY_ID",
+          "cdsm_aws_secret_key": "AWS_SECRET_KEY_ID"
       }
+  },
+  "GCloud": {
+      "resources": {
+          "cpu": 6,
+          "ram": 16,
+          "gpu_type": "nvidia-tesla-k80",
+          "num_of_gpu": 2,
+          "disk_type": "pd-ssd",
+          "disk_space": 60,
+          "number_of_workers": 2
+      },
+      "env": {
+          "cdsm_google_cred_path": "GCLOUD_CREDENTIAL_PATH"
+      }
+  },
+    "storage": {
+        "type": "local",
+        "host": "",
+        "port": "",
+        "env": {
+              "cdsm_aws_access_key": "AWS_ACCESS_KEY_ID",
+              "cdsm_aws_secret_key": "AWS_SECRET_KEY_ID"
+          }
+    },
+    "queue": {
+        "type": "local",
+        "endpoint": "localhost",
+        "port": 5672
+    }
 }

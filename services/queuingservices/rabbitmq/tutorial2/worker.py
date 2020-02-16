@@ -8,8 +8,8 @@ class Worker:
         self.channel = None
 
     def establish_connection(self):
-        self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host='localhost'))
+        params = pika.URLParameters("amqp://yhwcexgw:LsmOd6FwcoLWX53TTdaGYNrx8nh9uX-V@clam.rmq.cloudamqp.com/yhwcexgw")
+        self.connection = pika.BlockingConnection(params)
         self.channel = self.connection.channel()
 
     def create_sample_queue(self):

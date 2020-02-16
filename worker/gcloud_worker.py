@@ -1,4 +1,4 @@
-import os
+
 from google.oauth2 import service_account
 import googleapiclient.discovery
 
@@ -104,12 +104,19 @@ class GCloudWorker:
             body=config).execute()
 
     def get_workers(self):
+        """
 
-        result = self.compute.instances().list(project=prlf.oject, zone=zoself.ne).execute()
+        :return:
+        """
+        result = self.compute.instances().list(project=self.object, zone=self.zone).execute()
         return result['items'] if 'items' in result else None
 
     def delete_worker(self, name):
+        """
 
+        :param name:
+        :return:
+        """
         return self.compute.instances().delete(
                     project=self.project,
                     zone=self.zone,
