@@ -1,12 +1,11 @@
 import boto3
 
 from botocore.client import Config
-from botocore.client import ClientError
 from framework.interfaces.persistence.persistence import Persistence
 
 
 class S3Store(Persistence):
-    def __init__(self, credentials_dict, bucket_name, file_path, file_name, restore_path=None):
+    def __init__(self, credentials_dict, bucket_name=None , file_path=None, file_name=None, restore_path=None):
         """
 
         Initialize the following class variables and ensure that restore path
@@ -57,7 +56,7 @@ class S3Store(Persistence):
         """
 
         # create the boto3 client object with the passed in credentials
-        s3_obj = boto3.client('s3',
+        s3_obj = boto3.resource('s3',
                               endpoint_url=self.endpoint_url,
                               aws_access_key_id=self.access_key,
                               aws_secret_access_key=self.secret_key,
@@ -65,23 +64,22 @@ class S3Store(Persistence):
                               region_name=self.region)
 
         # check if the bucket already exists
-        bucket_exists = None
-        try:
-            s3_obj.meta.client.head(Bucket=self.bucket_name)
-            bucket_exists = True
-        except ClientError as e:
-            error_code = e.response['Error']['Code']
-            if error_code == '404':
-                bucket_exists = False
+        bucket_exists = False
 
-        if bucket_exists is None:
-            return False
+        if s3_obj.Bucket(self.bucket_name) in s3_obj.buckets.all():
+            bucket_exists = True
 
         # if the bucket doesn't exist, create it
         if not bucket_exists:
             self.create_bucket(s3_obj, self.bucket_name)
 
         # upload the file
+        s3_obj = boto3.client('s3',
+                                endpoint_url=self.endpoint_url,
+                                aws_access_key_id=self.access_key,
+                                aws_secret_access_key=self.secret_key,
+                                config=Config(signature_version='s3v4'),
+                                region_name=self.region)
         s3_obj.upload_file(self.file_path, self.bucket_name, self.file_name)
 
     def restore(self):
@@ -110,11 +108,11 @@ class S3Store(Persistence):
     def set_file_path(self, file_path):
         self.file_path = file_path
 
-    def set_bucket_name(self, bucket_name):
-        self.bucket_name = bucket_name
-
     def set_restore_path(self, restore_path):
         self.restore_path = restore_path
+
+    def set_bucket_name(self, bucket_name):
+        self.bucket_name = bucket_name
 
     @staticmethod
     def delete_bucket(s3, bucket_name):

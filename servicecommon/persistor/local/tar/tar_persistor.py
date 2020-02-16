@@ -73,7 +73,7 @@ class TarPersistor(Persistence):
         # it to the location of the tar file in a
         # folder named extracted_tar_files
         if self.extract_path is None:
-            self.extract_path += self.folder+"extracted_tar_files/"
+            self.extract_path += self.folder
         # make sure that the extraction path has a
         # "/" at the end
         else:
@@ -81,7 +81,7 @@ class TarPersistor(Persistence):
                 if not self.extract_path[-1] == "/":
                     self.extract_path += "/"
 
-            self.extract_path += "extracted_tar_files/"
+            # self.extract_path += "extracted_tar_files/"
 
         # if the path doesn't exist, create it
         if not os.path.exists(self.extract_path):
