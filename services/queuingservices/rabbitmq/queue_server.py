@@ -15,8 +15,8 @@ class QueueServer:
         self.task_obj = SampleTask()
 
     def establish_connection(self):
-        self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=self.endpoint))
+        params = pika.URLParameters(self.endpoint)
+        self.connection = pika.BlockingConnection(params)
 
         self.channel = self.connection.channel()
 
@@ -28,7 +28,7 @@ class QueueServer:
         self.channel.queue_bind(exchange=self.exchange_name,
                                 queue=self.queue_name)
 
-    def callback(self, ch, method, properties, body):
+    def callback(self, channel, method, properties, body):
         print(f" [x] Recieved {body}")
 
         # Some task is going to start.
@@ -37,14 +37,21 @@ class QueueServer:
         print(f"fib(10) = {number}")
 
         print(" [x] Done")
-        ch.basic_ack(delivery_tag=method.delivery_tag)
+        # channel.basic_ack(delivery_tag=method.delivery_tag)
 
-    def create_sample_response(self):
+    def consume(self):
         self.channel.basic_consume(
             queue=self.queue_name, on_message_callback=self.callback)
 
     def start_server(self):
         self.establish_connection()
         print(' [*] Waiting for messages. To exit press CTRL+C')
-        self.create_sample_response()
+        self.channel.basic_consume(
+            queue=self.queue_name, on_message_callback=self.callback, auto_ack=True)
+
         self.channel.start_consuming()
+
+qs = QueueServer("ss_queue", "jobs", "direct", "amqp://guest:guest@0.tcp.ngrok.io:15831")
+qs.start_server()
+qs.consume()
+

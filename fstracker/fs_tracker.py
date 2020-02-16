@@ -2,7 +2,6 @@ import os
 import sys
 import logging
 
-# from fstracker.fs_restorer import FileSystemRestorer
 from servicecommon.persistor.cloud.aws.s3_store import S3Store
 from servicecommon.persistor.cloud.gcloud.gcloud_store import GCloudStore
 from servicecommon.persistor.local.tar.tar_persistor import TarPersistor
@@ -17,7 +16,8 @@ class FileSystemTracker:
     """
 
     def __init__(self, path, temp_project_path, storage_communicator, project_name,
-                 container=None):
+                 job_id,
+                 container=None, args=None):
         """
         The constructor initializes the class variables
         :param path: Path to the python script or
@@ -25,6 +25,7 @@ class FileSystemTracker:
         :param temp_project_path: Project name to attach to this
         file system
         """
+        self.job_id = job_id
 
         # Get the Project path
         original_project_path, python_script_name = self.construct_project_path(path)
@@ -131,7 +132,7 @@ class FileSystemTracker:
 
         return project_path, python_script
 
-    def tar_filesystem(self):
+    def tar_job(self):
         """
         This function tars the directories of the path
         and stores them in a temporary location.
@@ -142,7 +143,7 @@ class FileSystemTracker:
 
         os.chdir(self.temp_project_path)
         logging.log(level=logging.INFO, msg="Tarring up Filesystem and Environment")
-        tar_name = "filesystem"
+        tar_name = self.job_id
         tar_persistor = TarPersistor(base_file_name=tar_name,
                                      folder=".",
                                      paths_to_tar=os.listdir(),
@@ -175,14 +176,14 @@ class FileSystemTracker:
         import shutil
         shutil.rmtree(self.temp_project_path)
 
-    def persist_filesystem(self):
+    def persist(self):
         """
         This function persists the filesystem onto a storage
         subject provided as an object in the constructor.
         :return:
         """
-        tarred_fs = self.tar_filesystem()
-        self.storage_communicator.set_file_name("filesystem.tar")
+        tarred_fs = self.tar_job()
+        self.storage_communicator.set_file_name(f"{self.job_id}.tar")
         self.storage_communicator.set_file_path(tarred_fs)
         self.storage_communicator.persist()
         self._cleanup()
@@ -205,5 +206,6 @@ class FileSystemTracker:
 # credentials_path = 'my-project1-254915-805e652a60d3.json'
 # storage_obj = GCloudStore(credentials_path=credentials_path)
 #
-# fst = FileSystemTracker(os.getcwd(), "../../temp/test_proj/", storage_obj, project_name="test-project-mineai")
+# fst = FileSystemTracker(os.getcwd(), "../../temp/test_proj/", storage_obj,
+#                         project_name="test-project-mineai", job_id="test_job")
 # fst.persist_filesystem()
