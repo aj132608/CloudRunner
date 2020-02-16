@@ -18,6 +18,7 @@ class GCloudWorker:
         self.zone = zone
         self.bucket = bucket
         self.resource_dict = resource_dict
+        self.workers = self.get_workers
 
     def create_workers(self):
         '''
@@ -101,3 +102,15 @@ class GCloudWorker:
             project=self.project,
             zone=self.zone,
             body=config).execute()
+
+    def get_workers(self):
+
+        result = self.compute.instances().list(project=prlf.oject, zone=zoself.ne).execute()
+        return result['items'] if 'items' in result else None
+
+    def delete_worker(self, name):
+
+        return self.compute.instances().delete(
+                    project=self.project,
+                    zone=self.zone,
+                    instance=name).execute()
