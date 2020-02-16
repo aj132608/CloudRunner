@@ -4,10 +4,13 @@ from tests.queue_tests.sample_task import SampleTask
 
 
 class QueueServer:
-    def __init__(self, queue_name, endpoint="localhost"):
+    def __init__(self, queue_name, exchange_name, exchange_type,
+                 endpoint="localhost"):
         self.connection = None
         self.channel = None
         self.queue_name = queue_name
+        self.exchange_name = exchange_name
+        self.exchange_type = exchange_type
         self.endpoint = endpoint
         self.task_obj = SampleTask()
 
@@ -17,8 +20,13 @@ class QueueServer:
 
         self.channel = self.connection.channel()
 
-    def create_queue(self):
         self.channel.queue_declare(queue=self.queue_name, durable=True)
+
+        self.channel.exchange_declare(exchange=self.exchange_name,
+                                      exchange_type=self.exchange_type)
+
+        self.channel.queue_bind(exchange=self.exchange_name,
+                                queue=self.queue_name)
 
     def callback(self, ch, method, properties, body):
         print(f" [x] Recieved {body}")
@@ -32,13 +40,11 @@ class QueueServer:
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     def create_sample_response(self):
-        self.channel.basic_qos(prefetch_count=1)
         self.channel.basic_consume(
             queue=self.queue_name, on_message_callback=self.callback)
 
     def start_server(self):
         self.establish_connection()
-        self.create_queue()
         print(' [*] Waiting for messages. To exit press CTRL+C')
         self.create_sample_response()
         self.channel.start_consuming()

@@ -48,5 +48,5 @@ class NewTask:
 
 
 if __name__ == "__main__":
-    task_obj = NewTask()
+    task_obj = NewTask(endpoint="http://e917f83b.ngrok.io/")
     task_obj.new_task_routine()
