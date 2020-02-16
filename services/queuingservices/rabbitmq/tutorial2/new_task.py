@@ -3,24 +3,36 @@ import sys
 
 
 class NewTask:
-    def __init__(self):
+    def __init__(self, endpoint=None, queue_name=None, message=None):
         self.connection = None
         self.channel = None
+        self.endpoint = endpoint
+        self.queue_name = queue_name
+        self.message = message
+
+        if self.endpoint is None:
+            self.endpoint = 'localhost'
+
+        if self.queue_name is None:
+            self.queue_name = 'task_queue'
+
+        if self.message is None:
+            self.message = "task-12345"
 
     def establish_connection(self):
         self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host='localhost'))
+            pika.ConnectionParameters(host=self.endpoint))
         self.channel = self.connection.channel()
 
     def create_sample_queue(self):
-        self.channel.queue_declare(queue='task_queue', durable=True)
+        self.channel.queue_declare(queue=self.queue_name, durable=True)
 
     def create_sample_message(self):
-        message = ' '.join(sys.argv[1:]) or "Hello World!"
+        message = ' '.join(sys.argv[1:]) or self.message
 
         self.channel.basic_publish(
             exchange='',
-            routing_key='task_queue',
+            routing_key=self.queue_name,
             body=message,
             properties=pika.BasicProperties(
                 delivery_mode=2,  # make message persistent

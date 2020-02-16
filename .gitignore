@@ -3,3 +3,5 @@ __pycache__
 .idea
 env/
 .vscode/
+filesystem.tar
+file_system

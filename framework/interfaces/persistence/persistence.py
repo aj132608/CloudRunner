@@ -3,11 +3,21 @@ from framework.interfaces.persistence.restorer import Restorer
 
 
 class Persistence(Persistor, Restorer):
-    def __init__(self):
-        pass
 
     def persist(self):
-        pass
+        raise NotImplementedError
 
     def restore(self):
-        pass
+        raise NotImplementedError
+
+    def set_file_name(self, file_name):
+        self.file_name = file_name
+
+    def set_file_path(self, file_path):
+        self.file_path = file_path
+
+    def set_restore_path(self, restore_path):
+        self.restore_path = restore_path
+
+    def set_bucket_name(self, bucket_name):
+        self.bucket_name = bucket_name
