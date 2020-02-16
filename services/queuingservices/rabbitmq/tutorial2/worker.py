@@ -37,5 +37,5 @@ class Worker:
 
 
 if __name__ == "__main__":
-    worker_obj = Worker('task_queue')
+    worker_obj = Worker('task_queue', "https://e917f83b.ngrok.io/")
     worker_obj.worker_routine()
