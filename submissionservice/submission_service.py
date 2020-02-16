@@ -2,6 +2,7 @@ import calendar
 import time
 
 # put imports from other python classes here
+from services.queuingservices.rabbitmq.task_submit import TaskSubmit
 
 
 class SubmissionService:
@@ -29,6 +30,8 @@ class SubmissionService:
             task_id = SubmissionService.generate_task_id()
 
         # Add the task ID to the Queue
+        task_obj = TaskSubmit(queue_name, task_id)
+        task_obj.submit()
 
         # Store the payload path with corresponding task ID in a location
 
@@ -38,6 +41,7 @@ class SubmissionService:
                 This function will start a task, add it to the queue of tasks, and store the reference information
                 in a cloud or local environment.
 
+                :param data_path:
                 :param payload_path:
                 :param queue_name:
                 :param task_id:
@@ -48,6 +52,8 @@ class SubmissionService:
             task_id = SubmissionService.generate_task_id()
 
         # Add the task ID to the Queue
+        task_obj = TaskSubmit(queue_name, task_id)
+        task_obj.submit()
 
         # Store the payload path with corresponding task ID in a location
 
