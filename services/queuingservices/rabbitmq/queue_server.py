@@ -4,48 +4,54 @@ from tests.queue_tests.sample_task import SampleTask
 
 
 class QueueServer:
-    def __init__(self, queue_name, endpoint="localhost"):
+    def __init__(self, queue_name, exchange_name, exchange_type,
+                 endpoint="localhost"):
         self.connection = None
         self.channel = None
         self.queue_name = queue_name
+        self.exchange_name = exchange_name
+        self.exchange_type = exchange_type
         self.endpoint = endpoint
         self.task_obj = SampleTask()
 
     def establish_connection(self):
-        self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=self.endpoint))
+        params = pika.URLParameters(self.endpoint)
+        self.connection = pika.BlockingConnection(params)
 
         self.channel = self.connection.channel()
 
-    def create_queue(self):
-        self.channel.queue_declare(queue=self.queue_name)
+        self.channel.queue_declare(queue=self.queue_name, durable=True)
 
-    def on_request(self, ch, method, props, body):
+        self.channel.exchange_declare(exchange=self.exchange_name,
+                                      exchange_type=self.exchange_type)
 
-        print(" [.] task_id(%s)" % body)
+        self.channel.queue_bind(exchange=self.exchange_name,
+                                queue=self.queue_name)
 
-        # for index in range(1, 5):
-        #     self.task_obj.fibonacci(index)
-        self.task_obj.fibonacci(5)
+    def callback(self, channel, method, properties, body):
+        print(f" [x] Recieved {body}")
 
-        response = f"{self.task_obj.get_sequence()}"
+        # Some task is going to start.
+        number = self.task_obj.fibonacci(10)
 
-        ch.basic_publish(exchange='',
-                         routing_key=props.reply_to,
-                         properties=pika.BasicProperties(correlation_id=
-                                                         props.correlation_id),
-                         body=response)
-        ch.basic_ack(delivery_tag=method.delivery_tag)
+        print(f"fib(10) = {number}")
 
-    def message_handler(self):
-        self.channel.basic_qos(prefetch_count=1)
-        self.channel.basic_consume(queue=self.queue_name,
-                                   on_message_callback=self.on_request)
+        print(" [x] Done")
+        # channel.basic_ack(delivery_tag=method.delivery_tag)
 
-        print(" [x] Awaiting RPC requests")
-        self.channel.start_consuming()
+    def consume(self):
+        self.channel.basic_consume(
+            queue=self.queue_name, on_message_callback=self.callback)
 
     def start_server(self):
         self.establish_connection()
-        self.create_queue()
-        self.message_handler()
+        print(' [*] Waiting for messages. To exit press CTRL+C')
+        self.channel.basic_consume(
+            queue=self.queue_name, on_message_callback=self.callback, auto_ack=True)
+
+        self.channel.start_consuming()
+
+qs = QueueServer("ss_queue", "jobs", "direct", "amqp://guest:guest@0.tcp.ngrok.io:15831")
+qs.start_server()
+qs.consume()
+

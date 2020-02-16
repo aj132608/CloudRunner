@@ -78,16 +78,16 @@ class FileSystemRestorer:
 
 
 #### AWS/MINIO Test ####
-credentials_dict = {
-    'endpoint_url': 'https://64e50269.ngrok.io',
-    'access_key': 'minioadmin',
-    'secret_key': 'minioadmin',
-    'region': None
-}
-
-storage_obj = S3Store(credentials_dict)
-fsr = FileSystemRestorer(storage_obj, project_name="test-project-mineai")
-fsr.restore_environment()
+# credentials_dict = {
+#     'endpoint_url': 'https://64e50269.ngrok.io',
+#     'access_key': 'minioadmin',
+#     'secret_key': 'minioadmin',
+#     'region': None
+# }
+#
+# storage_obj = S3Store(credentials_dict)
+# fsr = FileSystemRestorer(storage_obj, project_name="test-project-mineai")
+# fsr.restore_environment()
 
 #### GCloud Store Test ####
 # credentials_path = 'my-project1-254915-805e652a60d3.json'

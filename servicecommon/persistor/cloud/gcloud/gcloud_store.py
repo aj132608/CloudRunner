@@ -28,7 +28,10 @@ class GCloudStore(Persistence):
         '''
         creates bucket (db table equivalent) in google storage
         '''
-        bucket = self.instance.get_bucket(self.bucket_name)
+        try:
+            bucket = self.instance.get_bucket(self.bucket_name)
+        except:
+            bucket = None
         if not bucket:
             return self.instance.create_bucket(self.bucket_name)
         else:

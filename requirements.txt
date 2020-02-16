@@ -1,5 +1,3 @@
-google
-googleapiclient
 botocore
 boto3
 flask

@@ -16,8 +16,8 @@ class ConfigParser:
         config_name = os.path.basename(self.config_path)
         config_name = os.path.splitext(config_name)[0]
 
-        json_restorer = JsonPersistor(base_file_name=config_name,
-                                    folder=config_path)
+        json_restorer = JsonPersistor(None, base_file_name=config_name,
+                                      folder=config_path)
         self.config = json_restorer.restore()
 
     def get_computing_environments(self):
