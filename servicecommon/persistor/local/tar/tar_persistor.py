@@ -1,21 +1,23 @@
 import tarfile
 import os
+from tqdm import trange
 
 from framework.interfaces.persistence.persistence import Persistence
 
 
 class TarPersistor(Persistence):
 
-    def __init__(self, base_file_name="file", folder=".", paths_to_tar=[], extract_path=None):
+    def __init__(self, base_file_name="file", folder=".", paths_to_tar=None, extract_path=None):
         """
         This constructor initializes the name of the file to
         persist at what path.
-        :param base_file_name: Name of the file without the .json
-        extension
+        :param base_file_name: Name of the tar file
         :param folder: Location of the file to persist
         :returns nothing
         """
         super().__init__()
+        if paths_to_tar is None:
+            paths_to_tar = []
         self.base_file_name = base_file_name
         self.folder = folder
         self.paths_to_tar = paths_to_tar
@@ -26,7 +28,6 @@ class TarPersistor(Persistence):
         This function takes in a list of paths and
         adds the file at each path to a tar file with
         a specified path and file name.
-        :param dict: List of paths to persist
         :returns nothing
         """
 
@@ -44,10 +45,14 @@ class TarPersistor(Persistence):
             os.makedirs(self.folder)
 
         # Add the temporary json file to a .tar file
-        with tarfile.open(f'{self.folder + self.base_file_name}.tar', 'w') as tar_handle:
+        tar_path = f'{self.folder + self.base_file_name}.tar'
+        with tarfile.open(tar_path, 'w') as tar_handle:
             # add each path to the tarfile
-            for path in self.paths_to_tar:
+            for path_num in trange(len(self.paths_to_tar)):
+                path = self.paths_to_tar[path_num]
                 tar_handle.add(path)
+
+        return tar_path
 
     def restore(self):
         """

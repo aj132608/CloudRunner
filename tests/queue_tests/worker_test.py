@@ -1,4 +1,4 @@
-from services.queuingservices.rabbitmq.practice_worker import PracticeWorker
+from services.queuingservices.rabbitmq.practice.practice_worker import PracticeWorker
 
 if __name__ == "__main__":
     queue_name = 'test_queue'

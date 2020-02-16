@@ -1,6 +1,6 @@
 from servicecommon.persistor.local.tar.tar_persistor import TarPersistor
 
-list_of_paths = ["./__init__.py", "./setup", "./readme.md"]
+list_of_paths = ["configs"]
 extraction_path = "."
 
 # self, base_file_name="file", folder=".", paths_to_tar=[], extract_path=None
