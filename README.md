@@ -1,2 +1,3 @@
-# CloudRunner
-Distributed instances of computation over the cloud.
+# CloudDSM
+
+A cloud-distributed system-management tool.
