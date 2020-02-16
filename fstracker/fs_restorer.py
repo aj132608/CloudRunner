@@ -36,7 +36,7 @@ class FileSystemRestorer:
         to download the filesystem tar
         :return:
         """
-        filesystem_tar_base_name = "filesystem"
+        filesystem_tar_base_name = f"{self.job_id}"
         filesystem_tar_name = f"{filesystem_tar_base_name}.tar"
         path_to_restore = os.path.join(os.getcwd(), filesystem_tar_name)
 
