@@ -1,5 +1,9 @@
 import os
 
+# from fstracker.fs_tracker import FileSystemTracker
+from fstracker.fs_tracker import FileSystemTracker
+from servicecommon.persistor.cloud.aws.s3_store import S3Store
+from servicecommon.persistor.cloud.gcloud.gcloud_store import GCloudStore
 from servicecommon.persistor.local.tar.tar_persistor import TarPersistor
 
 
@@ -64,7 +68,7 @@ class FileSystemRestorer:
 
         os.chdir(f"{curr_dir}/file_system")
         assert "setup.sh" in os.listdir()
-        os.system("source setup.sh")
+        os.system("bash setup.sh")
 
         with open("source_venv.sh", 'w') as rsh:
             rsh.write(f"source cloud_venv/bin/activate")
@@ -72,5 +76,24 @@ class FileSystemRestorer:
         os.chdir(curr_dir)
 
 
+
+#### AWS/MINIO Test ####
+# credentials_dict = {
+#     'endpoint_url': 'http://127.0.0.1:9000',
+#     'access_key': 'minioadmin',
+#     'secret_key': 'minioadmin',
+#     'region': None
+# }
+#
+# storage_obj = S3Store(credentials_dict)
+# fsr = FileSystemRestorer(storage_obj, project_name="test-project-mineai")
+# fsr.restore_environment()
+
+#### GCloud Store Test ####
+# credentials_path = 'my-project1-254915-805e652a60d3.json'
+# storage_obj = GCloudStore(credentials_path=credentials_path)
+#
+# fsr = FileSystemRestorer(storage_obj, project_name="test-project-mineai")
+# fsr.restore_environment()
 
 

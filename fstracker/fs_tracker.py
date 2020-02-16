@@ -2,8 +2,9 @@ import os
 import sys
 import logging
 
-from fstracker.fs_restorer import FileSystemRestorer
+# from fstracker.fs_restorer import FileSystemRestorer
 from servicecommon.persistor.cloud.aws.s3_store import S3Store
+from servicecommon.persistor.cloud.gcloud.gcloud_store import GCloudStore
 from servicecommon.persistor.local.tar.tar_persistor import TarPersistor
 
 
@@ -15,7 +16,8 @@ class FileSystemTracker:
     Note: The whole project needs to be running in a virtual env.
     """
 
-    def __init__(self, path, temp_project_path, storage_communicator, project_name, container=None):
+    def __init__(self, path, temp_project_path, storage_communicator, project_name,
+                 container=None):
         """
         The constructor initializes the class variables
         :param path: Path to the python script or
@@ -186,17 +188,22 @@ class FileSystemTracker:
         self._cleanup()
 
 
-credentials_dict = {
-    'endpoint_url': 'http://127.0.0.1:9000',
-    'access_key': 'minioadmin',
-    'secret_key': 'minioadmin',
-    'region': None
-}
-storage_obj = S3Store(credentials_dict)
+#### AWS/MINIO Test ####
+# credentials_dict = {
+#     'endpoint_url': 'http://127.0.0.1:9000',
+#     'access_key': 'minioadmin',
+#     'secret_key': 'minioadmin',
+#     'region': None
+# }
+# storage_obj = S3Store(credentials_dict)
+#
+# fst = FileSystemTracker(os.getcwd(), "../../temp/test_proj/", storage_obj, project_name="test-project-mineai")
+# fst.persist_filesystem()
 
-fst = FileSystemTracker(os.getcwd(), "../../temp/test_proj/", storage_obj, project_name="test-project-mineai")
-fst.persist_filesystem()
 
-storage_obj = S3Store(credentials_dict)
-fsr = FileSystemRestorer(storage_obj, project_name="test-project-mineai")
-fsr.restore_environment()
+#### GCloud Store Test ####
+# credentials_path = 'my-project1-254915-805e652a60d3.json'
+# storage_obj = GCloudStore(credentials_path=credentials_path)
+#
+# fst = FileSystemTracker(os.getcwd(), "../../temp/test_proj/", storage_obj, project_name="test-project-mineai")
+# fst.persist_filesystem()

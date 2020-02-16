@@ -5,7 +5,8 @@ from framework.interfaces.persistence.persistence import Persistence
 
 
 class S3Store(Persistence):
-    def __init__(self, credentials_dict, bucket_name=None , file_path=None, file_name=None, restore_path=None):
+    def __init__(self, credentials_dict, bucket_name=None , file_path=None, file_name=None,
+                 restore_path=None):
         """
 
         Initialize the following class variables and ensure that restore path
@@ -101,18 +102,6 @@ class S3Store(Persistence):
 
         # download the file to the restore path
         s3_obj.download_file(self.bucket_name, self.file_name, self.restore_path)
-
-    def set_file_name(self, file_name):
-        self.file_name = file_name
-
-    def set_file_path(self, file_path):
-        self.file_path = file_path
-
-    def set_restore_path(self, restore_path):
-        self.restore_path = restore_path
-
-    def set_bucket_name(self, bucket_name):
-        self.bucket_name = bucket_name
 
     @staticmethod
     def delete_bucket(s3, bucket_name):
