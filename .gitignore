@@ -5,3 +5,4 @@ env/
 .vscode/
 filesystem.tar
 file_system
+*.json
