@@ -52,7 +52,13 @@ class GCloudStore(Persistence):
         self.bucket = self.create_bucket()
         self.bucket = self.instance.get_bucket(self.bucket_name)
         blob = self.bucket.blob(self.file_name)
-        blob.upload_from_filename(self.file_path)
+
+        try:
+            blob.upload_from_filename(self.file_path)
+        except Exception as e:
+            print(e)
+            import time
+            time.sleep(60)
 
     def restore(self):
         '''

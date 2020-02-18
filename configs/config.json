@@ -29,10 +29,9 @@
           "cdsm_google_cred_path": "GCLOUD_CREDENTIAL_PATH"
       }
   },
-    "storage": {
-        "type": "minio",
-        "endpoint_url": "http://localhost:9000",
-        "region": "us-east-1",
+  "storage": {
+        "type": "s3",
+        "endpoint_url": "http://df5d1021.ngrok.io",
         "env": {
           "cdsm_aws_access_key": "AWS_ACCESS_KEY_ID",
           "cdsm_aws_secret_key": "AWS_SECRET_KEY_ID"
@@ -42,6 +41,6 @@
         "type": "rmq",
         "queue_name": "test_queue",
         "exchange_name": "jobs",
-        "endpoint": "amqp://guest:guest@0.tcp.ngrok.io:15831"
+        "endpoint": "amqp://guest:guest@localhost"
     }
 }

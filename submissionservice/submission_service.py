@@ -1,7 +1,7 @@
 import calendar
 import time
 import os
-import sys
+
 
 # put imports from other python classes here
 from fstracker.fs_tracker import FileSystemTracker
@@ -85,9 +85,9 @@ class SubmissionService:
         gcloud_env = self.storage_config.get("env")
         cdsm_google_cred_path = os.getenv(gcloud_env["cdsm_google_cred_path"])
 
-        # if cdsm_google_cred_path is None:
-        #     cdsm_google_cred_path = \
-        #         "/Users/mo/Desktop/mineai/Cloud Runner/CloudRunner/my-project1-254915-805e652a60d3.json"
+        if cdsm_google_cred_path is None:
+            cdsm_google_cred_path = \
+                "/Users/mo/Desktop/mineai/CloudRunner/my-project1-254915-805e652a60d3.json"
 
         return cdsm_google_cred_path
 
@@ -191,6 +191,3 @@ class SubmissionService:
         return task_id
 
 
-ss = SubmissionService(config_path="/Users/mo/Desktop/mineai/Cloud Runner/CloudRunner/configs/config.json",
-                       project_id="submission-service-test")
-ss.submit_task("worker/gcloud.py", "ss_queue", "ss-job")

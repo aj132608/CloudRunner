@@ -4,6 +4,7 @@ from tests.queue_tests.sample_task import SampleTask
 
 
 class QueueServer:
+
     def __init__(self, queue_name, exchange_name, exchange_type,
                  endpoint="localhost"):
         self.connection = None
@@ -15,7 +16,9 @@ class QueueServer:
         self.task_obj = SampleTask()
 
     def establish_connection(self):
+
         params = pika.URLParameters(self.endpoint)
+        print(self.endpoint)
         self.connection = pika.BlockingConnection(params)
 
         self.channel = self.connection.channel()
@@ -51,7 +54,7 @@ class QueueServer:
 
         self.channel.start_consuming()
 
-qs = QueueServer("ss_queue", "jobs", "direct", "amqp://guest:guest@0.tcp.ngrok.io:15831")
+qs = QueueServer("ss_queue", "jobs", "direct", "amqp://guest:guest@localhost")
 qs.start_server()
 qs.consume()
 
