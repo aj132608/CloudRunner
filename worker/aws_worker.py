@@ -3,8 +3,7 @@ import boto3
 
 class AwsWorker:
 
-    ACCESS_KEY = "AKIAIRZ3GOSUKQNWP6WA"
-    SECRET_KEY = "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"
+
     INSTANCE_SPECS = {
             'c4.large': {
                 'cpus': 2,
@@ -48,57 +47,95 @@ class AwsWorker:
             }
         }
 
-    def __init__(self, key_path, number_of_workers, region_name, key_name, 
-                 resource_dict):
-        '''
+    IMAGES = {
+        "ap-northeast-1": "ami-50eaed51",
+        "ap-southeast-1": "ami-f95875ab",
+        "eu-central-1": "ami-ac1524b1",
+        "eu-west-1": "ami-823686f5",
+        "sa-east-1": "ami-c770c1da",
+        "us-east-1": "ami-4ae27e22",
+        "us-west-1": "ami-d1180894",
+        "cn-north-1": "ami-fe7ae8c7",
+        "us-gov-west-1": "ami-cf5630ec",
+        "ap-southeast-2": "ami-890b62b3",
+        "us-west-2": "ami-898dd9b9"
+    }
+
+    def __init__(self, aws_credentials, resource_dict):
+        """
         Initiates api for amazon vm workers
-        '''
-        self.compute = boto3.resource('ec2',
-                                      region_name=region_name,
-                                      aws_access_key_id=AwsWorker.ACCESS_KEY,
-                                      aws_secret_access_key=AwsWorker.SECRET_KEY)
-        self.number_of_workers = number_of_workers
+        """
+        resource_name = "ec2"
+
+        self.access_key = None
+        self.secret_key = None
+        self.region = None
+
+        self.resource_dict = resource_dict
+        self.aws_credentials = aws_credentials
+        self.set_credentials()
+
+        self.compute = boto3.resource(resource_name,
+                                      region_name=self.region,
+                                      aws_access_key_id=self.access_key,
+                                      aws_secret_access_key=self.secret_key)
+
+        # response = self.compute.describe_instances()
+        # print(response)
+
+        self.number_of_workers = resource_dict["num_workers"]
+        self.image = self.resource_dict.get("image", AwsWorker.IMAGES[self.region])
         self.workers = None
-        self.key_path = key_path
-        self.key_name = key_name
-        self.instance_specs = AwsWorker.INSTANCE_SPECS
         self.instance_type = self._select_instance_type(resource_dict)
 
-    def create_key_pair(self, key_name):
-        '''
-        creates private key to communicate with aws vm
-        '''
-        # create a file to store the key locally
-        outfile = open(self.key_path, 'w')
+    def set_credentials(self):
+        """
 
-        # call the boto ec2 function to create a key pair
-        key_pair = self.compute.create_key_pair(KeyName=key_name)
+        Parses the credentials dictionary and populates the following class
+        variables:
 
-        # capture the key and store it in a file
-        KeyPairOut = str(key_pair.key_material)
-        print(KeyPairOut)
-        outfile.write(KeyPairOut)
-        self.key_name = key_name
+        :return: Nothing
+        """
+        self.access_key = self.aws_credentials['access_key']
+        self.secret_key = self.aws_credentials['secret_key']
+        self.region = self.aws_credentials['region']
+
+    # def create_key_pair(self, key_name):
+        # '''
+        # creates private key to communicate with aws vm
+        # '''
+        # # create a file to store the key locally
+        # outfile = open(self.key_path, 'w')
+        #
+        # # call the boto ec2 function to create a key pair
+        # key_pair = self.compute.create_key_pair(KeyName=key_name)
+        #
+        # # capture the key and store it in a file
+        # KeyPairOut = str(key_pair.key_material)
+        # print(KeyPairOut)
+        # outfile.write(KeyPairOut)
+        # self.key_name = key_name
 
     def create_workers(self):
-        '''
-        Creates a set of vm workers 
-        '''
+        """
+        Creates a set of vm workers
+        """
         self.workers = self.compute.create_instances(
-                    ImageId='ami-08bc77a2c7eb2b1da',
+                    ImageId=self.image,
                     MinCount=1,
                     MaxCount=self.number_of_workers,
                     InstanceType=self.instance_type,
-                    KeyName=self.key_name
+                    # KeyName=self.key_name
                 )
 
     def delete_workers(self, ids):
-        '''
+        """
         Deletes vm worker by id
-        '''
-        self.compute.instances.filter(InstanceIds=ids).terminate()
+        """
+        self.compute.instances.filter(\
+            InstanceIds=ids).terminate()
 
-    def memstr2int(self, string):
+    def _mem_to_str(self, string):
             '''
             Assist function. Turns strings to number equivalent
             ''' 
@@ -116,13 +153,14 @@ class AwsWorker:
         '''
         Makes use of resources to select the instance type'
         '''
-        sorted_specs = sorted(self.instance_specs.items(), key=lambda x: x[1]['cpus'])
+        sorted_specs = sorted(self.INSTANCE_SPECS.items(),
+                              key=lambda x: x[1]['cpus'])
 
         for instance in sorted_specs:
             if int(
                 instance[1]['cpus']) >= int(
-                resources_needed['cpus']) and self.memstr2int(
-                instance[1]['ram']) >= self.memstr2int(
+                resources_needed['cpus']) and self._mem_to_str(
+                instance[1]['ram']) >= self._mem_to_str(
                 resources_needed['ram']) and int(
                     instance[1]['gpus']) >= int(
                         resources_needed['gpus']):

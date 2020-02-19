@@ -42,6 +42,12 @@ class SubmissionService:
 
         return task_submittor
 
+    def create_instances(self):
+        """
+
+        :return:
+        """
+
     def _determine_storage(self):
         """
 

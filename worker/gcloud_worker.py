@@ -21,16 +21,16 @@ class GCloudWorker:
         self.workers = self.get_workers
 
     def create_workers(self):
-        '''
+        """
         Creates a number of VM instances to act as workers
-        '''
+        """
         for num in range(self.number_of_workers):
             self.create_instance(f"worker-{str(num)}")
 
     def create_instance(self, name):
-        '''
+        """
         Creates a single VM instance
-        '''
+        """
         # Configure os image
         image_response = self.compute.images().getFromFamily(
             project='gce-uefi-images', family='ubuntu-1804-lts').execute()
@@ -108,7 +108,8 @@ class GCloudWorker:
 
         :return:
         """
-        result = self.compute.instances().list(project=self.object, zone=self.zone).execute()
+        result = self.compute.instances().list(project=self.object,
+                                               zone=self.zone).execute()
         return result['items'] if 'items' in result else None
 
     def delete_worker(self, name):
