@@ -1,5 +1,5 @@
 {
-  "compute": ["local", "AWS", "GCloud"],
+  "compute": ["local", "aws", "gcloud"],
   "local": {
       "CPU": 6,
       "RAM": 16,

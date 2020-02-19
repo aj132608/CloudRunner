@@ -5,18 +5,16 @@ import googleapiclient.discovery
 
 class GCloudWorker:
  
-    def __init__(self, credentials_path, number_of_workers, project, zone,
-                 bucket, resource_dict):
+    def __init__(self, credentials_path, resource_dict):
 
         self.credentials = service_account.Credentials.from_service_account_file(
             credentials_path
         )
         self.compute = googleapiclient.discovery.build('compute', 'v1',
                                                        credentials=self.credentials)
-        self.number_of_workers = number_of_workers
-        self.project = project
-        self.zone = zone
-        self.bucket = bucket
+        self.number_of_workers = resource_dict.get("num_workers")
+        self.project = credentials_path.get("project_id")
+        self.zone = self.resource_dict.get("zone")
         self.resource_dict = resource_dict
         self.workers = self.get_workers
 
@@ -87,14 +85,6 @@ class GCloudWorker:
                 "onHostMaintenance": "TERMINATE",
                 "automaticRestart": True,
                 "nodeAffinities": []
-            },
-
-            # Metadata for the VM
-            'metadata': {
-                'items': [{
-                    'key': 'bucket',
-                    'value': self.bucket
-                }]
             }
         }
 
@@ -108,7 +98,7 @@ class GCloudWorker:
 
         :return:
         """
-        result = self.compute.instances().list(project=self.object,
+        result = self.compute.instances().list(project=self.project,
                                                zone=self.zone).execute()
         return result['items'] if 'items' in result else None
 

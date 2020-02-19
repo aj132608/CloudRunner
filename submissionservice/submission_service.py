@@ -10,6 +10,8 @@ from servicecommon.persistor.cloud.aws.s3_store import S3Store
 from servicecommon.persistor.cloud.gcloud.gcloud_store import GCloudStore
 from services.queuingservices.job_struct import JobStruct
 from services.queuingservices.rabbitmq.task_submit import TaskSubmit
+from worker.aws_worker import AwsWorker
+from worker.gcloud_worker import GCloudWorker
 
 
 class SubmissionService:
@@ -37,16 +39,28 @@ class SubmissionService:
         """
         exchange_name = self.queue_config.get("exchange_name")
         endpoint = self.queue_config.get("endpoint")
-        task_submittor = TaskSubmit(queue_name, exchange_name, endpoint)
-        task_submittor.establish_connection()
+        task_submitter = TaskSubmit(queue_name, exchange_name, endpoint)
+        task_submitter.establish_connection()
 
-        return task_submittor
+        return task_submitter
 
     def create_instances(self):
         """
 
         :return:
         """
+        if "aws" in self.computes:
+            aws_creds = self._build_aws_creds()
+            resource_dict = self.config_parser.get_compute_resource_allocation("aws")
+            aws_worker = AwsWorker(aws_creds, resource_dict)
+            aws_worker.create_workers()
+
+        if "gcloud" in self.computes:
+            gcloud_creds = self._build_gcloud_creds()
+            resource_dict = self.config_parser.get_compute_resource_allocation("gcloud")
+            gcloud_workers = GCloudWorker(gcloud_creds, )
+
+
 
     def _determine_storage(self):
         """
