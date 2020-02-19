@@ -89,7 +89,7 @@ class AwsWorker:
                     MinCount=1,
                     MaxCount=self.number_of_workers,
                     InstanceType=self.instance_type,
-                    KeyName=self.key_name
+                    KeyName=self.key_name,
                 )
 
     def delete_workers(self, ids):

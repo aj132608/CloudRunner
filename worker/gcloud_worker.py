@@ -1,12 +1,13 @@
 import os
 from google.oauth2 import service_account
 import googleapiclient.discovery
+import random
 
 
 class GCloudWorker:
  
     def __init__(self, credentials_path, number_of_workers, project, zone,
-                 bucket, resource_dict):
+                 bucket, resource_dict, startup_path):
 
         self.credentials = service_account.Credentials.from_service_account_file(
             credentials_path
@@ -18,14 +19,15 @@ class GCloudWorker:
         self.zone = zone
         self.bucket = bucket
         self.resource_dict = resource_dict
-        self.workers = self.get_workers
+        self.workers = self.get_workers()
+        self.startup_path = startup_path
 
     def create_workers(self):
         '''
         Creates a number of VM instances to act as workers
         '''
         for num in range(self.number_of_workers):
-            self.create_instance(f"worker-{str(num)}")
+            self.create_instance(f"worker-{str(random.randint(0,99999))}")
 
     def create_instance(self, name):
         '''
@@ -44,6 +46,8 @@ class GCloudWorker:
         disk_type = self.resource_dict['disk_type']
         disk_space = self.resource_dict['disk_space']
 
+        startup_script = open(os.path.abspath(self.startup_path), 'r').read()
+
         # Set VM configuration
         config = {
             'name': name,
@@ -52,12 +56,12 @@ class GCloudWorker:
             'machineType': f"zones/{self.zone}/machineTypes/custom-{num_of_cpu}-{amount_of_memory}",
 
             # Gpu configuration
-            "guestAccelerators": [
-                {
-                    "acceleratorCount": num_of_gpu,
-                    "acceleratorType": f"zones/{self.zone}/acceleratorTypes/{gpu}"
-                }
-            ],
+            # "guestAccelerators": [
+            #     {
+            #         "acceleratorCount": num_of_gpu,
+            #         "acceleratorType": f"zones/{self.zone}/acceleratorTypes/{gpu}"
+            #     }
+            # ],
 
             # Disk and image specifications
             'disks': [
@@ -80,7 +84,6 @@ class GCloudWorker:
                 ]
             }],
 
-
             # Misccelaneous settings
             "scheduling": {
                 "preemptible": False,
@@ -92,8 +95,8 @@ class GCloudWorker:
             # Metadata for the VM
             'metadata': {
                 'items': [{
-                    'key': 'bucket',
-                    'value': self.bucket
+                    'key': "startup-script",
+                    'value': startup_script
                 }]
             }
         }
@@ -105,7 +108,7 @@ class GCloudWorker:
 
     def get_workers(self):
 
-        result = self.compute.instances().list(project=prlf.oject, zone=zoself.ne).execute()
+        result = self.compute.instances().list(project=self.project, zone=self.zone).execute()
         return result['items'] if 'items' in result else None
 
     def delete_worker(self, name):
