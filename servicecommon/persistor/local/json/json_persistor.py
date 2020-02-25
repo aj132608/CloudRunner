@@ -5,7 +5,9 @@ from framework.interfaces.persistence.persistence import Persistence
 
 
 class JsonPersistor(Persistence):
+    """
 
+    """
     def __init__(self, dict, base_file_name="file", folder="."):
         """
         This constructor initializes the name of the file to

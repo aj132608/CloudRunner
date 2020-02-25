@@ -13,31 +13,35 @@ class ConfigParser:
         self.config_path = config_path
 
         config_path = os.path.dirname(self.config_path)
+
         config_name = os.path.basename(self.config_path)
         config_name = os.path.splitext(config_name)[0]
-
         json_restorer = JsonPersistor(None, base_file_name=config_name,
                                       folder=config_path)
         self.config = json_restorer.restore()
+
+        self.compute_config = None
+        self.computing_environments = self.get_computing_environments()
 
     def get_computing_environments(self):
         """
 
         :return:
         """
-        compute_types = self.config.get("compute")
+        self.compute_config = self.config.get("compute")
+        compute_types = self.compute_config.keys()
 
         for compute_type in compute_types:
             assert compute_type in ("GCloud", "AWS", "local")
 
-        return compute_types
+        return list(compute_types)
 
     def get_compute_config(self, compute_type):
         """
 
         :return:
         """
-        return self.config.get(compute_type)
+        return self.compute_config.get(compute_type)
 
     def get_compute_resource_allocation(self, compute_type):
         """
@@ -48,6 +52,16 @@ class ConfigParser:
         resources = compute_config.get("resources")
 
         return resources
+
+    def get_compute_env(self, compute_type):
+        """
+
+        :return:
+        """
+        compute_config = self.get_compute_config(compute_type)
+        env = compute_config.get("env")
+
+        return env
 
     def get_storage_config(self):
         """

@@ -5,7 +5,10 @@ from framework.interfaces.persistence.persistence import Persistence
 
 
 class S3Store(Persistence):
-    def __init__(self, credentials_dict, bucket_name=None , file_path=None, file_name=None,
+    """
+
+    """
+    def __init__(self, credentials_dict, bucket_name=None, file_path=None, file_name=None,
                  restore_path=None):
         """
 

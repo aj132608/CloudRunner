@@ -2,8 +2,6 @@ import os
 import sys
 import logging
 
-from servicecommon.persistor.cloud.aws.s3_store import S3Store
-from servicecommon.persistor.cloud.gcloud.gcloud_store import GCloudStore
 from servicecommon.persistor.local.tar.tar_persistor import TarPersistor
 
 
@@ -16,7 +14,7 @@ class FileSystemTracker:
     """
 
     def __init__(self, path, temp_project_path, storage_communicator, project_name,
-                 job_id,
+                 project_id, config, config_path,
                  container=None, args=None):
         """
         The constructor initializes the class variables
@@ -25,7 +23,8 @@ class FileSystemTracker:
         :param temp_project_path: Project name to attach to this
         file system
         """
-        self.job_id = job_id
+        self.project_id = project_id
+        self.config = config
 
         # Get the Project path
         original_project_path, python_script_name = self.construct_project_path(path)
@@ -41,6 +40,10 @@ class FileSystemTracker:
         # Copy the project files to the temporary folder
         project_tar_path = os.path.join(self.temp_project_path, project_folder_name)
         self._copy_files(original_project_path, project_tar_path)
+        # Copy config file
+        if config_path.find(".josn") == -1:
+            config_path = f"{config_path}.json"
+        self._copy_files(config_path, temp_project_path)
 
         # Create Scripts for Python
         self.create_python_installation_script()
@@ -48,6 +51,9 @@ class FileSystemTracker:
 
         # Create the pip requirements file
         os.system(f"pip freeze > {self.temp_project_path}/requirements.txt")
+
+        # Create VAR Script export
+        self.create_env_var_export_script()
 
         # Create setup script
         self.create_setup_script("cloud_venv/bin/activate")
@@ -111,7 +117,12 @@ class FileSystemTracker:
         :return:
         """
         from distutils.dir_util import copy_tree
-        copy_tree(src, dst)
+        try:
+            copy_tree(src, dst)
+        except:
+            import shutil
+            file_name = os.path.basename(src)
+            shutil.copyfile(src, f"{dst}/{file_name}")
 
     def construct_project_path(self, path):
         """
@@ -143,7 +154,7 @@ class FileSystemTracker:
 
         os.chdir(self.temp_project_path)
         logging.log(level=logging.INFO, msg="Tarring up Filesystem and Environment")
-        tar_name = self.job_id
+        tar_name = f"{self.project_id}_fs"
         tar_persistor = TarPersistor(base_file_name=tar_name,
                                      folder=".",
                                      paths_to_tar=os.listdir(),
@@ -166,7 +177,8 @@ class FileSystemTracker:
                       f"bash venv_creator.sh\n"
                       f"source {venv_command_path}\n"
                       f"pip install -r requirements.txt\n"
-                      f"source {venv_command_path}")
+                      f"source {venv_command_path}"
+                      f"bash export_vars.sh")
 
     def _cleanup(self):
         """
@@ -176,6 +188,47 @@ class FileSystemTracker:
         import shutil
         shutil.rmtree(self.temp_project_path)
 
+    def create_env_var_export_script(self):
+        env_vars = self.create_user_env_var_dict()
+        var_command = ""
+
+        for var_name in env_vars:
+            var_command += f"export {var_name}={env_vars[var_name]}\n"
+
+        env_vars_script_path = os.path.join(self.temp_project_path,
+                                            "export_vars.sh")
+        with open(env_vars_script_path, 'w') as rsh:
+            rsh.write(var_command)
+
+    def create_user_env_var_dict(self):
+        """
+
+        :return:
+        """
+        env_vars = {}
+        computes = self.config.get("compute")
+        for compute in computes:
+            compute_dict = computes[compute]
+            env = compute_dict.get("env", None)
+            if env is not None:
+                for env_var in env:
+                    env_var_name_in_sys = env[env_var]
+                    env_vars[env_var_name_in_sys] = os.environ.get(env_var_name_in_sys)
+
+        storage_vars = self.config.get("storage").get("env", None)
+        if storage_vars is not None:
+            for var in storage_vars:
+                env_var_name_in_sys = storage_vars[var]
+                env_vars[env_var_name_in_sys] = os.environ.get(env_var_name_in_sys)
+
+        queue_vars = self.config.get("queue").get("env", None)
+        if queue_vars is not None:
+            for var in queue_vars:
+                env_var_name_in_sys = queue_vars[var]
+                env_vars[env_var_name_in_sys] = os.environ.get(env_var_name_in_sys)
+
+        return env_vars
+
     def persist(self):
         """
         This function persists the filesystem onto a storage
@@ -183,7 +236,7 @@ class FileSystemTracker:
         :return:
         """
         tarred_fs = self.tar_job()
-        self.storage_communicator.set_file_name(f"{self.job_id}.tar")
+        self.storage_communicator.set_file_name(f"{self.project_id}_fs.tar")
         self.storage_communicator.set_file_path(tarred_fs)
         self.storage_communicator.persist()
         self._cleanup()
