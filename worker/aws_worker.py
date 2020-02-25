@@ -61,7 +61,7 @@ class AwsWorker:
         "us-west-2": "ami-898dd9b9"
     }
 
-    def __init__(self, aws_credentials, resource_dict):
+    def __init__(self, aws_credentials, resource_dict, startup_path):
         """
         Initiates api for amazon vm workers
         """
@@ -74,7 +74,7 @@ class AwsWorker:
         self.resource_dict = resource_dict
         self.aws_credentials = aws_credentials
         self.set_credentials()
-
+        self.startup_path = startup_path
         self.compute = boto3.resource(resource_name,
                                       region_name=self.region,
                                       aws_access_key_id=self.access_key,
@@ -125,6 +125,7 @@ class AwsWorker:
                     MinCount=1,
                     MaxCount=self.number_of_workers,
                     InstanceType=self.instance_type,
+                    UserData = self.startup_path
                     # KeyName=self.key_name
                 )
 

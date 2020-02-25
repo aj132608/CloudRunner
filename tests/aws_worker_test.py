@@ -5,6 +5,6 @@ credential = {
     "access_key": "AKIAWA6NKF4S6U2THRHT",
     "secret_key": "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",
 }
-worker = AwsWorker(credential, resource)
+worker = AwsWorker(credential, resource, 'startup.sh')
 worker.create_workers()
 
