@@ -1,6 +1,10 @@
+import time
+
+
 class SampleTask:
     def __init__(self):
         self.sequence = []
+        time.sleep(10)
 
     def fibonacci(self, index):
         if index == 1:
