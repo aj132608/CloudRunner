@@ -10,65 +10,40 @@ class SQSMessage:
 
     """
 
-    def __init__(self, credentials_path):
-        self._client_obj = None
+    def __init__(self, credentials_dict):
         self._queue_url = None
-        self._access_key = None
-        self._secret_key = None
-        self._region = None
-        self._credentials_path = credentials_path
-        self._get_credentials()
+        self.credentials_dict = credentials_dict
+        self._client_obj = self._connect()
 
-    def _get_credentials(self):
+    def _connect(self):
+
         """
 
-        Grabs the credentials for the authorized AWS user from a json file
-        titled 'credentials.json' from the path specified in the constructor.
-
-        It uses the JsonPersistor class from the persistor utilities to
-        convert the credentials json file over to a dictionary.
-
-        Once converted, the function extracts the credentials and populates
-        the following class variables:
-
-        - access_key
-        - secret_key
-        - region
+        This function unpacks the credentials from the credentials dictionary
+        and creates a client object.
 
         :return:
         """
-        from servicecommon.persistor.local.json.json_persistor import JsonPersistor
 
-        json_restorer = JsonPersistor(dict=None,
-                                      base_file_name="credentials",
-                                      folder=self._credentials_path)
+        # Unpack the credentials from the dictionary
+        access_key = self.credentials_dict['access_key']
+        secret_key = self.credentials_dict['secret_key']
+        region = self.credentials_dict['region']
 
-        credentials = json_restorer.restore()
+        client_obj = boto3.client('sqs',
+                                  aws_access_key_id=access_key,
+                                  aws_secret_access_key=secret_key,
+                                  config=Config(signature_version='s3v4'),
+                                  region_name=region)
 
-        self._access_key = credentials['access_key']
-        self._secret_key = credentials['secret_key']
-        self._region = credentials['region']
+        return client_obj
 
-    def _initialize_client_object(self):
+    def reconnect(self, credentials_dict):
+        self.credentials_dict = credentials_dict
 
-        """
-
-        Creates the boto3 client object with the passed in credentials
-
-        :return: Nothing
-
-        """
-
-        self._client_obj = boto3.client('sqs',
-                                        aws_access_key_id=self._access_key,
-                                        aws_secret_access_key=self._secret_key,
-                                        config=Config(signature_version='s3v4'),
-                                        region_name=self._region)
+        self._client_obj = self._connect()
 
     def get_client_object(self):
-        if self._client_obj is None:
-            self._initialize_client_object()
-
         return self._client_obj
 
     def send_message(self, message, attributes, queue_url, task_id):
@@ -115,8 +90,6 @@ class SQSMessage:
 
         :return: Nothing
         """
-        if self._client_obj is None:
-            self._initialize_client_object()
 
         try:
             message_response = self._client_obj.send_message(
@@ -128,6 +101,8 @@ class SQSMessage:
                 MessageDeduplicationId=task_id
             )
             print("Message was successfully sent.")
+            return message_response
         except Exception as e:
             print("Message Sending was Unsuccessful.")
             print(f"Exception: {e}")
+            return None

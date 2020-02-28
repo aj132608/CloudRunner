@@ -1,5 +1,6 @@
 from services.queuingservices.sqs.sqs_worker import SQSWorker
 from services.queuingservices.sqs.create_sqs_queue import SQSQueue
+from servicecommon.persistor.local.json.json_persistor import JsonPersistor
 
 
 def create_queue(obj, queue_name):
@@ -11,30 +12,19 @@ def create_queue(obj, queue_name):
 if __name__ == "__main__":
     CREDENTIALS_PATH = "./creds/aws/sqs/"
 
-    new_queue_obj = SQSQueue(credentials_path=CREDENTIALS_PATH)
+    restore_obj = JsonPersistor(dict=None,
+                                base_file_name='credentials',
+                                folder=CREDENTIALS_PATH)
+
+    credentials_dict = restore_obj.restore()
+
+    new_queue_obj = SQSQueue(credentials_dict=credentials_dict)
 
     new_queue_obj.create_queue('myqueue.fifo')
 
     queue_url = new_queue_obj.get_queue_url()
 
-    # print(queue_url)
-
-    worker = SQSWorker(CREDENTIALS_PATH, queue_url=queue_url)
+    worker = SQSWorker(credentials_dict=credentials_dict,
+                       queue_url=queue_url)
 
     worker.start_server()
-
-    # response = create_queue(sqs, 'test')
-    #
-    # print(response.url)
-    #
-    # my_queue = sqs.get_queue()
-    #
-    # print(my_queue.url)
-
-    # try:
-    #     queue = create_queue(obj=sqs, queue_name='test.fifo')
-    #     print(queue)
-    #     print("Queue Successfully Created!")
-    # except Exception as e:
-    #     print("Queue Creation Failed")
-    #     print(f"Exception: {e}")

@@ -9,82 +9,48 @@ class SQSQueue:
         This class will be responsible for creating and deleting
         SQS queues.
 
-        """
+    """
 
-    def __init__(self, credentials_path):
-        self._resource_obj = None
-        self._client_obj = None
+    def __init__(self, credentials_dict):
         self._queue = None
-        self._access_key = None
-        self._secret_key = None
-        self._region = None
-        self._credentials_path = credentials_path
-        self._get_credentials()
+        self.credentials_dict = credentials_dict
+        (resource_obj, client_obj) = self._connect()
+        self._resource_obj = resource_obj
+        self._client_obj = client_obj
 
-    def _get_credentials(self):
-
-        """
-
-            Grabs the credentials for the authorized AWS user from a json file
-            titled 'credentials.json' from the path specified in the constructor.
-
-            It uses the JsonPersistor class from the persistor utilities to
-            convert the credentials json file over to a dictionary.
-
-            Once converted, the function extracts the credentials and populates
-            the following class variables:
-
-            - access_key
-            - secret_key
-            - region
-
-            :return: Nothing
+    def _connect(self):
 
         """
 
-        from servicecommon.persistor.local.json.json_persistor import JsonPersistor
+        This function unpacks the credentials from the credentials dictionary
+        and creates a resource and client object.
 
-        json_restorer = JsonPersistor(dict=None,
-                                      base_file_name="credentials",
-                                      folder=self._credentials_path)
-
-        credentials = json_restorer.restore()
-
-        self._access_key = credentials['access_key']
-        self._secret_key = credentials['secret_key']
-        self._region = credentials['region']
-
-    def _initialize_resource_object(self):
-
+        :return:
         """
 
-        Creates the boto3 resource object with the passed in credentials
+        # Unpack the credentials from the dictionary
+        access_key = self.credentials_dict['access_key']
+        secret_key = self.credentials_dict['secret_key']
+        region = self.credentials_dict['region']
 
-        :return: Nothing
+        resource_obj = boto3.resource('sqs',
+                                      aws_access_key_id=access_key,
+                                      aws_secret_access_key=secret_key,
+                                      config=Config(signature_version='s3v4'),
+                                      region_name=region)
 
-        """
+        client_obj = boto3.client('sqs',
+                                  aws_access_key_id=access_key,
+                                  aws_secret_access_key=secret_key,
+                                  config=Config(signature_version='s3v4'),
+                                  region_name=region)
 
-        self._resource_obj = boto3.resource('sqs',
-                                            aws_access_key_id=self._access_key,
-                                            aws_secret_access_key=self._secret_key,
-                                            config=Config(signature_version='s3v4'),
-                                            region_name=self._region)
+        return resource_obj, client_obj
 
-    def _initialize_client_object(self):
+    def reset_connection(self, credential_dict):
+        self.credentials_dict = credential_dict
 
-        """
-
-        Creates the boto3 client object with the passed in credentials
-
-        :return: Nothing
-
-        """
-
-        self._client_obj = boto3.client('sqs',
-                                        aws_access_key_id=self._access_key,
-                                        aws_secret_access_key=self._secret_key,
-                                        config=Config(signature_version='s3v4'),
-                                        region_name=self._region)
+        (self._resource_obj, self._client_obj) = self._connect()
 
     def get_queue_url(self):
 
@@ -103,6 +69,9 @@ class SQSQueue:
         else:
             return self._queue.url
 
+    def get_queue(self):
+        return self._queue
+
     def delete_queue(self):
 
         """
@@ -111,8 +80,6 @@ class SQSQueue:
 
         :return: Nothing
         """
-
-        self._initialize_client_object()
 
         try:
             self._client_obj.delete_queue(
@@ -132,13 +99,12 @@ class SQSQueue:
         :return: Nothing
         """
 
-        self._initialize_resource_object()
-
         try:
             self._queue = self._resource_obj.create_queue(QueueName=queue_name,
                                                           Attributes={
                                                               'FifoQueue': 'true'
                                                           })
+            return self._queue
         except Exception as e:
             print(f"Exception: {e}")
-
+            return None

@@ -9,55 +9,41 @@ class SQSWorker:
     This class is a Worker for the SQS Queuing Service.
 
     """
-    def __init__(self, credentials_path, queue_url=None):
-        self._client_obj = None
-        # self._queue = None
-        self._access_key = None
-        self._secret_key = None
-        self._region = None
+
+    def __init__(self, credentials_dict, queue_url=None):
         self._user_id = None
         self._queue_url = queue_url
-        self._credentials_path = credentials_path
-        self._get_credentials()
+        self.credentials_dict = credentials_dict
+        self._client_obj = self._connect()
 
-    def _get_credentials(self):
+    def _connect(self):
 
         """
 
-        This function gets all necessary credentials from the credentials.json
-        and populates the credentials class variables.
+        This function unpacks the credentials from the credentials dictionary
+        and creates a client object.
 
-        :return: Nothing
+        :return:
         """
 
-        from servicecommon.persistor.local.json.json_persistor import JsonPersistor
+        # Unpack the credentials from the dictionary
+        access_key = self.credentials_dict['access_key']
+        secret_key = self.credentials_dict['secret_key']
+        region = self.credentials_dict['region']
 
-        json_restorer = JsonPersistor(dict=None,
-                                      base_file_name="credentials",
-                                      folder=self._credentials_path)
-
-        credentials = json_restorer.restore()
-
-        self._access_key = credentials['access_key']
-        self._secret_key = credentials['secret_key']
-        self._region = credentials['region']
-
-        # Check if you still need a queue url
-        if self._queue_url is None:
-            try:
-                # if you do, look for it in the credentials.json file
-                self._queue_url = credentials['queue_url']
-
-            except KeyError:
-                # if it isn't there either then you can't really do anything
-                pass
-
-        # Check the credentials.json for a user_id
         try:
-            self._user_id = credentials['user_id']
+            self._queue_url = self.credentials_dict['queue_url']
         except KeyError:
-            # retrieve the user id from the queue url
-            self._user_id = self._get_user_id()
+            # You have no url and probably nothing will happen.
+            pass
+
+        client_obj = boto3.client('sqs',
+                                  aws_access_key_id=access_key,
+                                  aws_secret_access_key=secret_key,
+                                  config=Config(signature_version='s3v4'),
+                                  region_name=region)
+
+        return client_obj
 
     def _get_user_id(self):
 
@@ -82,22 +68,6 @@ class SQSWorker:
 
             return url_element_list[user_id_index]
 
-    def _initialize_client_object(self):
-
-        """
-
-        Creates the boto3 client object with the passed in credentials
-
-        :return: Nothing
-
-        """
-
-        self._client_obj = boto3.client('sqs',
-                                        aws_access_key_id=self._access_key,
-                                        aws_secret_access_key=self._secret_key,
-                                        config=Config(signature_version='s3v4'),
-                                        region_name=self._region)
-
     def _retrieve_messages(self):
 
         """
@@ -108,8 +78,6 @@ class SQSWorker:
         :return: If there are messages, it will return them. Otherwise, it
         will return None.
         """
-
-        self._initialize_client_object()
 
         response = self._client_obj.receive_message(
             QueueUrl=self._queue_url,
@@ -181,7 +149,7 @@ class SQSWorker:
 
         """
 
-        Generic task that executes whenever a message is recieved.
+        Generic task that executes whenever a message is received.
 
         :return:
         """
@@ -197,14 +165,13 @@ class SQSWorker:
     def start_server(self):
         """
 
-        This function will be called initially and will execute all of the
-        relevant
-
-        1. Create client object
-        4. Check for messages
+        This function will be responsible for listening for messages and
+        handling them appropriately.
 
         :return:
         """
+
+        print("Waiting for messages...")
 
         while True:
 
@@ -217,4 +184,10 @@ class SQSWorker:
                     self._process_first_message(current_message_batch)
 
             except KeyboardInterrupt:
+                print("Closing Worker")
+                break
+
+            except Exception as e:
+                print(f"Exception: {e}")
+                print("Closing Worker")
                 break
