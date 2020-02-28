@@ -45,6 +45,11 @@ class SQSWorker:
 
         return client_obj
 
+    def reconnect(self, credentials_dict):
+        self.credentials_dict = credentials_dict
+
+        self._client_obj = self._connect()
+
     def _get_user_id(self):
 
         """
