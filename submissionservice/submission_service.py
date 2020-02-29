@@ -3,8 +3,8 @@ import time
 
 from fstracker.fs_tracker import FileSystemTracker
 from servicecommon.parsers.config_parser import ConfigParser
-from services.queuingservices.job_struct import JobStruct
-from services.queuingservices.rabbitmq.task_submit import TaskSubmit
+from queue.job_struct import JobStruct
+from queue.rabbitmq.task_submit import TaskSubmit
 
 
 class SubmissionService:
