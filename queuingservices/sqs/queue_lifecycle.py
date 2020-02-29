@@ -3,7 +3,7 @@ import boto3
 from botocore.client import Config
 
 
-class SQSQueue:
+class QueueLifecycle:
     """
 
         This class will be responsible for creating and deleting
@@ -67,17 +67,17 @@ class SQSQueue:
 
         """
 
-        This function will delete a queue based on the queue_url provided.
+        This function will delete a queuingservices based on the queue_url provided.
 
         :return: Nothing
 
         """
 
         if isinstance(queue_input, str):
-            # queue input is a queue url.
+            # queuingservices input is a queuingservices url.
             queue_url = queue_input
         else:
-            # queue input is a queue object
+            # queuingservices input is a queuingservices object
             queue_url = queue_input.url
 
         try:
@@ -93,7 +93,7 @@ class SQSQueue:
 
         """
 
-        This function will create a queue with the name provided by queue_name.
+        This function will create a queuingservices with the name provided by queue_name.
 
         :param queue_name:String - must contain only alphanumeric characters,
         punctuation, and end with the .fifo extension.

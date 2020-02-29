@@ -3,7 +3,7 @@ import boto3
 from botocore.client import Config
 
 
-class SQSWorker:
+class Subscriber:
     """
 
     This class is a Worker for the SQS Queuing Service.
@@ -66,10 +66,10 @@ class SQSWorker:
 
         """
 
-        This function will extract the user id from the queue url and
+        This function will extract the user id from the queuingservices url and
         return it.
 
-        :return: user id corresponding to the queue url
+        :return: user id corresponding to the queuingservices url
         """
 
         if self._queue_url is None:
@@ -89,8 +89,8 @@ class SQSWorker:
 
         """
 
-        This function will receive a batch of messages from a queue
-        specified by the queue url.
+        This function will receive a batch of messages from a queuingservices
+        specified by the queuingservices url.
 
         :return: If there are messages, it will return them. Otherwise, it
         will return None.
@@ -143,7 +143,7 @@ class SQSWorker:
 
         self._delete_message(receipt_handle=receipt_handle)
 
-        number = SQSWorker.run_task()
+        number = Subscriber.run_task()
         print(f"fib(10) = {number}")
 
     def _delete_message(self, receipt_handle):

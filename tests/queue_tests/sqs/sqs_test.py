@@ -1,5 +1,5 @@
-from queue.sqs.sqs_worker import SQSWorker
-from queue.sqs.create_sqs_queue import SQSQueue
+from queuingservices.sqs.subscriber import Subscriber
+from queuingservices.sqs.queue_lifecycle import QueueLifecycle
 from servicecommon.persistor.local.json.json_persistor import JsonPersistor
 
 
@@ -18,13 +18,13 @@ if __name__ == "__main__":
 
     credentials_dict = restore_obj.restore()
 
-    new_queue_obj = SQSQueue(credentials_dict=credentials_dict)
+    new_queue_obj = QueueLifecycle(credentials_dict=credentials_dict)
 
     my_queue = new_queue_obj.create_queue('myqueue.fifo')
 
     queue_url = my_queue.url
 
-    worker = SQSWorker(credentials_dict=credentials_dict,
-                       queue_url=queue_url)
+    worker = Subscriber(credentials_dict=credentials_dict,
+                        queue_url=queue_url)
 
     worker.start_server()

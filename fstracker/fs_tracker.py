@@ -221,7 +221,7 @@ class FileSystemTracker:
                 env_var_name_in_sys = storage_vars[var]
                 env_vars[env_var_name_in_sys] = os.environ.get(env_var_name_in_sys)
 
-        queue_vars = self.config.get("queue").get("env", None)
+        queue_vars = self.config.get("queuingservices").get("env", None)
         if queue_vars is not None:
             for var in queue_vars:
                 env_var_name_in_sys = queue_vars[var]

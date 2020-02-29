@@ -3,7 +3,7 @@ import boto3
 from botocore.client import Config
 
 
-class SQSMessage:
+class Publisher:
     """
 
     This class will be responsible for sending messages to SQS queues
@@ -71,14 +71,14 @@ class SQSMessage:
         """
 
         This is the function that will be called externally to actually
-        send messages to a queue given a queue url.
+        send messages to a queuingservices given a queuingservices url.
 
         :param task_id:String - The unique id for this particular task
 
         Example:
         task_id = 'Alex12345'
 
-        :param message:String - The message that will be sent to the queue
+        :param message:String - The message that will be sent to the queuingservices
 
         Example:
         message = 'Information about current NY Times fiction bestseller for
@@ -103,7 +103,7 @@ class SQSMessage:
             }
         }
 
-        :param queue_url:String - url pointing to the desired queue
+        :param queue_url:String - url pointing to the desired queuingservices
 
         Example:
         queue_url = "https://region.queue.amazonaws.com/user_id/queue_name"
