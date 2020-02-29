@@ -6,3 +6,4 @@ env/
 filesystem.tar
 file_system
 *.json
+creds/
