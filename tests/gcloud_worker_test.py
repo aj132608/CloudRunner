@@ -1,4 +1,4 @@
-from worker.gcloud_worker import GCloudWorker
+from workermanager.gcloud_worker import GCloudWorker
 
 instance = GCloudWorker("/Users/mo/Desktop/mineai/CloudRunner/_accesskeys/Cloud Runner-3ddd96d875ef.json", {
     'cpu': 1,
