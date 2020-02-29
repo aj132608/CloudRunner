@@ -20,9 +20,9 @@ if __name__ == "__main__":
 
     new_queue_obj = SQSQueue(credentials_dict=credentials_dict)
 
-    new_queue_obj.create_queue('myqueue.fifo')
+    my_queue = new_queue_obj.create_queue('myqueue.fifo')
 
-    queue_url = new_queue_obj.get_queue_url()
+    queue_url = my_queue.url
 
     worker = SQSWorker(credentials_dict=credentials_dict,
                        queue_url=queue_url)

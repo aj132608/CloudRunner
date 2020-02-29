@@ -12,7 +12,6 @@ class SQSQueue:
     """
 
     def __init__(self, credentials_dict):
-        self._queue = None
         self.credentials_dict = credentials_dict
         (resource_obj, client_obj) = self._connect()
         self._resource_obj = resource_obj
@@ -47,46 +46,48 @@ class SQSQueue:
 
         return resource_obj, client_obj
 
-    def reset_connection(self, credential_dict):
-        self.credentials_dict = credential_dict
-
-        (self._resource_obj, self._client_obj) = self._connect()
-
-    def get_queue_url(self):
+    def reconnect(self, credentials_dict):
 
         """
 
-        This function will return the queue url if the queue object has been
-        populated.
+        This public function will take in a new credentials dictionary,
+        pass it into the credentials_dict class variable, and call
+        _connect() again to retrieve the updated resource and client
+        objects
 
-        Otherwise, it will return None.
-
-        :return: queue url or None
+        :param credentials_dict:
+        :return: Nothing
         """
 
-        if self._queue is None:
-            return None
-        else:
-            return self._queue.url
+        self.credentials_dict = credentials_dict
 
-    def get_queue(self):
-        return self._queue
+        self._resource_obj, self._client_obj = self._connect()
 
-    def delete_queue(self):
+    def delete_queue(self, queue_input):
 
         """
 
         This function will delete a queue based on the queue_url provided.
 
         :return: Nothing
+
         """
+
+        if isinstance(queue_input, str):
+            # queue input is a queue url.
+            queue_url = queue_input
+        else:
+            # queue input is a queue object
+            queue_url = queue_input.url
 
         try:
             self._client_obj.delete_queue(
-                QueueUrl=self.get_queue_url()
+                QueueUrl=queue_url
             )
+            return True
         except Exception as e:
             print(f"Exception: {e}")
+            return False
 
     def create_queue(self, queue_name):
 
@@ -100,11 +101,11 @@ class SQSQueue:
         """
 
         try:
-            self._queue = self._resource_obj.create_queue(QueueName=queue_name,
-                                                          Attributes={
-                                                              'FifoQueue': 'true'
-                                                          })
-            return self._queue
+            queue = self._resource_obj.create_queue(QueueName=queue_name,
+                                                    Attributes={
+                                                        'FifoQueue': 'true'
+                                                    })
+            return queue
         except Exception as e:
             print(f"Exception: {e}")
             return None

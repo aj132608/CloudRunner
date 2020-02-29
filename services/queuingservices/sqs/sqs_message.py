@@ -11,7 +11,6 @@ class SQSMessage:
     """
 
     def __init__(self, credentials_dict):
-        self._queue_url = None
         self.credentials_dict = credentials_dict
         self._client_obj = self._connect()
 
@@ -39,11 +38,32 @@ class SQSMessage:
         return client_obj
 
     def reconnect(self, credentials_dict):
+
+        """
+
+            This public function will take in a new credentials dictionary,
+            pass it into the credentials_dict class variable, and call
+            _connect() again to retrieve the updated resource and client
+            objects
+
+            :param credentials_dict:
+            :return: Nothing
+        """
+
         self.credentials_dict = credentials_dict
 
         self._client_obj = self._connect()
 
     def get_client_object(self):
+
+        """
+
+        This function is a getter for the protected client object
+        class variable.
+
+        :return:
+        """
+
         return self._client_obj
 
     def send_message(self, message, attributes, queue_url, task_id):
