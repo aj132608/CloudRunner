@@ -4,7 +4,6 @@ from fstracker.fs_tracker import FileSystemTracker
 from servicecommon.parsers.config_parser import ConfigParser
 from servicecommon.persistor.cloud.aws.s3_store import S3Store
 from servicecommon.persistor.cloud.gcloud.gcloud_store import GCloudStore
-from services.queuingservices.rabbitmq.task_submit import TaskSubmit
 from worker.aws_worker import AwsWorker
 from worker.gcloud_worker import GCloudWorker
 

@@ -1,4 +1,4 @@
-from services.queuingservices.sqs.sqs_message import SQSMessage
+from queue.sqs.sqs_message import SQSMessage
 from servicecommon.persistor.local.json.json_persistor import JsonPersistor
 
 

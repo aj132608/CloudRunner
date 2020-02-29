@@ -1,5 +1,5 @@
-from services.queuingservices.sqs.sqs_worker import SQSWorker
-from services.queuingservices.sqs.create_sqs_queue import SQSQueue
+from queue.sqs.sqs_worker import SQSWorker
+from queue.sqs.create_sqs_queue import SQSQueue
 from servicecommon.persistor.local.json.json_persistor import JsonPersistor
 
 
