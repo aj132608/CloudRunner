@@ -2,11 +2,11 @@ import os
 
 from fstracker.fs_tracker import FileSystemTracker
 from servicecommon.parsers.config_parser import ConfigParser
-from servicecommon.persistor.cloud.aws.s3_store import S3Store
-from servicecommon.persistor.cloud.gcloud.gcloud_store import GCloudStore
+from storage.aws.s3_store import S3Store
+from storage.gcloud import GCloudStore
 from services.queuingservices.rabbitmq.task_submit import TaskSubmit
-from worker.aws_worker import AwsWorker
-from worker.gcloud_worker import GCloudWorker
+from workermanager.aws_worker import, EC2WorkerManager
+from workermanager.gcloud_worker import GCloudWorker
 
 
 # GCLOUD CREDS: https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.171849056.175403659.1582490113-1979849865.1581803480
@@ -15,7 +15,7 @@ class InitializationService:
 
     def __init__(self, config_path, project_id,
                  persist_file_system=True,
-                 create_instances=True):
+                 create_instances=True, initialize_queue=True):
         """
 
         :param config_path:
@@ -33,8 +33,24 @@ class InitializationService:
         if persist_file_system:
             self.persist_inital_filesystem()
 
-        # if create_instances:
-        #     self.create_instances()
+        if create_instances:
+            self.create_instances()
+
+        if initialize_queue:
+            self.task_submitter = self.initialize_queue()
+
+    def initialize_queue(self):
+        """
+
+        :return:
+        """
+        queue_config = self.config_parser.get_queue_config()
+        if queue_config.get("type") == "rmq":
+            task_submitter = TaskSubmit(queue_name=queue_config.get("queue_name"),
+                                        exchange=queue_config.get("exchange_name"),
+                                        endpoint=queue_config.get("endpoint_url"))
+        task_submitter.establish_connection()
+        return task_submitter
 
     def persist_inital_filesystem(self):
         """
@@ -42,7 +58,7 @@ class InitializationService:
         :return:
         """
         fs_tracker = FileSystemTracker(os.getcwd(),
-                                       "/Users/mo/Desktop/cloudrunner/temp",
+                                       f"~/.cloudrunner/{self.project_id}/temp",
                                        self.storage_obj,
                                        project_name=self.project_id,
                                        project_id=self.project_id,
@@ -56,19 +72,17 @@ class InitializationService:
         :return:
         """
         if "AWS" in self.computes:
-            aws_creds = self._build_aws_instance_creds()
-            resource_dict = self.config_parser.get_compute_resource_allocation("AWS")
-            resource_dict["region"] = self.config_parser.get_compute_config("AWS").get("region")
-            aws_worker = AwsWorker(aws_creds, resource_dict, self.project_id)
-            # aws_worker.create_workers()
+            aws_config = self.config_parser.get_compute_config("AWS")
+            aws_worker = EC2WorkerManager(self.project_id, aws_config)
+            aws_worker.create_workers(queue_name=None, )
 
-        if "GCloud" in self.computes:
-            gcloud_creds = self._build_gcloud_creds()
-            resource_dict = self.config_parser.get_compute_resource_allocation("GCloud")
-            resource_dict["zone"] = self.config_parser.get_compute_config("GCloud").get("zone")
-            gcloud_workers = GCloudWorker(gcloud_creds,
-                                          resource_dict, self.project_id)
-            gcloud_workers.create_workers()
+        # if "GCloud" in self.computes:
+        #     gcloud_creds = self._build_gcloud_creds()
+        #     resource_dict = self.config_parser.get_compute_resource_allocation("GCloud")
+        #     resource_dict["zone"] = self.config_parser.get_compute_config("GCloud").get("zone")
+        #     gcloud_workers = GCloudWorker(gcloud_creds,
+        #                                   resource_dict, self.project_id)
+        #     gcloud_workers.create_workers()
 
     def _determine_storage(self):
         """
@@ -148,4 +162,4 @@ class InitializationService:
 
 
 ins = InitializationService("/Users/mo/Desktop/mineai/Cloud Runner Extras/configs/config",
-                            project_id="ins-test")
+                            project_id="edys")

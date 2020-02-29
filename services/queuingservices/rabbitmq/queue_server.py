@@ -13,12 +13,11 @@ class QueueServer:
         self.exchange_name = exchange_name
         self.exchange_type = exchange_type
         self.endpoint = endpoint
-        self.task_obj = SampleTask()
+        # self.task_obj = SampleTask()
 
     def establish_connection(self):
 
         params = pika.URLParameters(self.endpoint)
-        print(self.endpoint)
         self.connection = pika.BlockingConnection(params)
 
         self.channel = self.connection.channel()
@@ -35,7 +34,7 @@ class QueueServer:
         print(f" [x] Recieved {body}")
 
         # Some task is going to start.
-        number = self.task_obj.fibonacci(10)
+        number = 5
 
         print(f"fib(10) = {number}")
 
@@ -44,15 +43,14 @@ class QueueServer:
 
     def consume(self):
         self.channel.basic_consume(
-            queue=self.queue_name, on_message_callback=self.callback)
+            queue=self.queue_name, on_message_callback=self.callback, auto_ack=True)
+
+        self.channel.start_consuming()
 
     def start_server(self):
         self.establish_connection()
         print(' [*] Waiting for messages. To exit press CTRL+C')
-        self.channel.basic_consume(
-            queue=self.queue_name, on_message_callback=self.callback, auto_ack=True)
-
-        self.channel.start_consuming()
+        self.consume()
 
 qs = QueueServer("ss_queue", "jobs", "direct", "amqp://guest:guest@localhost")
 qs.start_server()

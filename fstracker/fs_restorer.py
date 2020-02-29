@@ -1,9 +1,6 @@
 import os
 
 # from fstracker.fs_tracker import FileSystemTracker
-from fstracker.fs_tracker import FileSystemTracker
-from servicecommon.persistor.cloud.aws.s3_store import S3Store
-from servicecommon.persistor.cloud.gcloud.gcloud_store import GCloudStore
 from servicecommon.persistor.local.tar.tar_persistor import TarPersistor
 
 

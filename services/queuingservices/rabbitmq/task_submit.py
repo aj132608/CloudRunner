@@ -26,7 +26,6 @@ class TaskSubmit:
         self.channel.queue_declare(queue=self.queue_name, durable=True)
 
     def publish_message(self, message):
-
         self.channel.basic_publish(
             exchange=self.exchange,
             routing_key=self.queue_name,
@@ -43,5 +42,5 @@ class TaskSubmit:
         self.publish_message(str(message))
         self.connection.close()
 
-# ts = TaskSubmit("new_q", "job", "amqp://guest:guest@0.tcp.ngrok.io:15831")
+# ts = TaskSubmit("new_q", "job", "amqp://guest:guest@0.tcp.ngrok.io:18109")
 # ts.submit()
