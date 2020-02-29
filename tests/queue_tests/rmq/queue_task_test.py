@@ -1,4 +1,4 @@
-from services.queuingservices.rabbitmq.task_submit import TaskSubmit
+from queue.rabbitmq.task_submit import TaskSubmit
 
 
 def submit_n_tasks(obj, n):
@@ -7,7 +7,6 @@ def submit_n_tasks(obj, n):
 
 
 if __name__ == "__main__":
-    # args = "ss_queue", "jobs", "direct", "amqp://guest:guest@localhost"
     task_obj = TaskSubmit(queue_name="ss_queue",
                           exchange="jobs",
                           endpoint="amqp://guest:guest@localhost")
@@ -15,5 +14,6 @@ if __name__ == "__main__":
     try:
         submit_n_tasks(task_obj, 10)
         print("Test Passed")
-    except:
+    except Exception as e:
         print("Test Failed")
+        print(f"Exception: {e}")
