@@ -3,8 +3,8 @@ import time
 
 from fstracker.fs_tracker import FileSystemTracker
 from servicecommon.parsers.config_parser import ConfigParser
-from queue.job_struct import JobStruct
-from queue.rabbitmq.task_submit import TaskSubmit
+from queuingservices.job_struct import JobStruct
+from queuingservices.rabbitmq.publisher import Publisher
 
 
 class SubmissionService:
@@ -31,7 +31,7 @@ class SubmissionService:
         """
         exchange_name = self.queue_config.get("exchange_name")
         endpoint = self.queue_config.get("endpoint")
-        task_submitter = TaskSubmit(queue_name, exchange_name, endpoint)
+        task_submitter = Publisher(queue_name, exchange_name, endpoint)
         task_submitter.establish_connection()
 
         return task_submitter
@@ -39,7 +39,7 @@ class SubmissionService:
     def submit_task(self, payload_path, queue_name,
                     job_id=None):
         """
-        This function will start a task, add it to the queue of tasks, and store the reference information
+        This function will start a task, add it to the queuingservices of tasks, and store the reference information
         in a cloud or local environment.
 
         :param payload_path:
