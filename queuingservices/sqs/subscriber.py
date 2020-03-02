@@ -12,7 +12,7 @@ class Subscriber:
 
     def __init__(self, credentials_dict, queue_url=None):
         self._user_id = None
-        self._queue_url = queue_url
+        self.queue_url = queue_url
         self.credentials_dict = credentials_dict
         self._client_obj = self._connect()
 
@@ -66,10 +66,10 @@ class Subscriber:
 
         """
 
-        This function will extract the user id from the queuingservices url and
+        This function will extract the user id from the queue url and
         return it.
 
-        :return: user id corresponding to the queuingservices url
+        :return: user id corresponding to the queue url
         """
 
         if self._queue_url is None:
@@ -89,8 +89,8 @@ class Subscriber:
 
         """
 
-        This function will receive a batch of messages from a queuingservices
-        specified by the queuingservices url.
+        This function will receive a batch of messages from a queue
+        specified by the queue url.
 
         :return: If there are messages, it will return them. Otherwise, it
         will return None.
@@ -143,7 +143,7 @@ class Subscriber:
 
         self._delete_message(receipt_handle=receipt_handle)
 
-        number = Subscriber.run_task()
+        number = Subscriber._run_task()
         print(f"fib(10) = {number}")
 
     def _delete_message(self, receipt_handle):
@@ -162,7 +162,7 @@ class Subscriber:
         )
 
     @staticmethod
-    def run_task():
+    def _run_task():
 
         """
 

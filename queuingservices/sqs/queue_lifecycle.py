@@ -67,17 +67,17 @@ class QueueLifecycle:
 
         """
 
-        This function will delete a queuingservices based on the queue_url provided.
+        This function will delete a queue based on the queue_url provided.
 
         :return: Nothing
 
         """
 
         if isinstance(queue_input, str):
-            # queuingservices input is a queuingservices url.
+            # queue input is a queue url.
             queue_url = queue_input
         else:
-            # queuingservices input is a queuingservices object
+            # queue input is a queue object
             queue_url = queue_input.url
 
         try:
@@ -93,7 +93,7 @@ class QueueLifecycle:
 
         """
 
-        This function will create a queuingservices with the name provided by queue_name.
+        This function will create a queue with the name provided by queue_name.
 
         :param queue_name:String - must contain only alphanumeric characters,
         punctuation, and end with the .fifo extension.

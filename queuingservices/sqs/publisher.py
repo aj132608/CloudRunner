@@ -71,14 +71,14 @@ class Publisher:
         """
 
         This is the function that will be called externally to actually
-        send messages to a queuingservices given a queuingservices url.
+        send messages to a queue given a queue url.
 
         :param task_id:String - The unique id for this particular task
 
         Example:
         task_id = 'Alex12345'
 
-        :param message:String - The message that will be sent to the queuingservices
+        :param message:String - The message that will be sent to the queue
 
         Example:
         message = 'Information about current NY Times fiction bestseller for
@@ -103,7 +103,7 @@ class Publisher:
             }
         }
 
-        :param queue_url:String - url pointing to the desired queuingservices
+        :param queue_url:String - url pointing to the desired queue
 
         Example:
         queue_url = "https://region.queue.amazonaws.com/user_id/queue_name"

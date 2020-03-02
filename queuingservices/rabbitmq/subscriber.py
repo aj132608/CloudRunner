@@ -75,7 +75,7 @@ class Subscriber:
 
         print(f" [x] Recieved {body}")
 
-        Subscriber.run_task()
+        Subscriber._run_task()
 
         print(" [x] Done")
 
@@ -135,7 +135,7 @@ class Subscriber:
             self._connection.close()
 
     @staticmethod
-    def run_task():
+    def _run_task():
         """
         blank slate function to execute something
 

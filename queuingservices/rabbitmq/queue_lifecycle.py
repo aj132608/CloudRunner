@@ -57,7 +57,7 @@ class QueueLifecycle:
         """
 
         This function creates an exchange with a specified name and binds
-        it to a specified queuingservices.
+        it to a specified queue.
 
         :param exchange_name:
         :param queue_name:
@@ -86,11 +86,11 @@ class QueueLifecycle:
 
         """
 
-        This function will create a queuingservices on the specified channel using the
+        This function will create a queue on the specified channel using the
         name passed in from queue_name.
 
         :param queue_name:
-        :return: boolean value indicating whether or not the queuingservices was
+        :return: boolean value indicating whether or not the queue was
         successfully created.
 
         """
@@ -100,7 +100,7 @@ class QueueLifecycle:
                                         durable=True)
             return True
         except Exception as e:
-            print(f"The following queuingservices could not be created: {queue_name}")
+            print(f"The following queue could not be created: {queue_name}")
             print(f"Exception: {e}")
 
             return False
@@ -109,11 +109,11 @@ class QueueLifecycle:
 
         """
 
-        This function will delete a queuingservices on the specified channel using the
+        This function will delete a queue on the specified channel using the
         name passed in from queue_name.
 
         :param queue_name:
-        :return: boolean value indicating whether or not the queuingservices was
+        :return: boolean value indicating whether or not the queue was
         successfully created.
 
         """
@@ -123,7 +123,7 @@ class QueueLifecycle:
 
             return True
         except Exception as e:
-            print(f"The following queuingservices could not be deleted: {queue_name}")
+            print(f"The following queue could not be deleted: {queue_name}")
             print(f"Exception: {e}")
 
             return False

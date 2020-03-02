@@ -52,7 +52,7 @@ class Publisher:
 
         """
 
-        This function will send a specified message to a queuingservices and
+        This function will send a specified message to a queue and
         close the connection right after.
 
         :param exchange_name:
