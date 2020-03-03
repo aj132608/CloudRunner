@@ -2,7 +2,7 @@
 
 A standardized system of different queuing services that can be used by specifying in the users configuration file.
 
-###Background
+### Background
 
 All queuing services on Cloud Runner operate using Publishers and Subscribers. 
 
