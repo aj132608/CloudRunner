@@ -2,9 +2,26 @@
 
 A standardized system of different queuing services that can be used by specifying in the users configuration file.
 
+###Background
+
+All queuing services on Cloud Runner operate using Publishers and Subscribers. 
+
+**Subscribers**
+
+Subscribers are responsible for processing messages that are held on the queue server. The subscribers in Cloud Runner
+listen for messages in real time and process them as they come through callback functions. These functions also remove 
+elements from the queue. The subscribers in Cloud Runner will sit in the Cloud instances and initiate the applications
+to be run on those instances.
+
+**Publishers**
+
+Publishers are responsible for publishing or sending messages to the queue to be processed. In Cloud Runner, publishers
+send information on jobs that need to be run on Cloud instances.
+
 ## Getting Started
 
-There are two packages that are required to run all of the different available queues. I will provide commands to install all dependencies.
+There are two packages that are required to run all of the different available queues. 
+Commands to install dependencies will be provided below.
 
 ### Dependencies
 
@@ -27,11 +44,13 @@ If you wanted to install all dependencies for CloudRunner, just run the followin
 pip install -r requirements.txt
 ```
 
-Downloading and setting up Docker is a little bit more involved and can be done from [here](https://www.docker.com/products/docker-desktop).
+Downloading and setting up Docker is a little bit more involved and can be done from 
+[here](https://www.docker.com/products/docker-desktop).
 
 ### Queue Configuration
 
-To use the queuing service, the user must create a configuration of what fits their specific problem. These configurations are held in a master configuration file called config.json.
+To use the queuing service, the user must create a configuration of what fits their specific problem. 
+These configurations are held in a master configuration file called config.json.
 
 **Examples**
 
@@ -72,7 +91,8 @@ The queue_url field will, if used, point to an existing SQS queue.
 
 ## Running the tests
 
-To look at the source code for the queuing services tests, go to /tests/queue_tests. There will be the following tests for different aspects of the queuing service.
+To look at the source code for the queuing services tests, go to /tests/queue_tests. 
+There will be the following tests for different aspects of the queuing service.
 
 ###Rabbit MQ Tests
 * queue_start_test.py
