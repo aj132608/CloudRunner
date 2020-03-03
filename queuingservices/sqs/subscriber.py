@@ -32,7 +32,7 @@ class Subscriber:
         region = self.credentials_dict['region']
 
         try:
-            self._queue_url = self.credentials_dict['queue_url']
+            self.queue_url = self.credentials_dict['queue_url']
         except KeyError:
             # You have no url and probably nothing will happen.
             pass
@@ -72,12 +72,12 @@ class Subscriber:
         :return: user id corresponding to the queue url
         """
 
-        if self._queue_url is None:
+        if self.queue_url is None:
             return None
         else:
             # Separate the URL into elements previously separated by
             # forward slashes
-            url_element_list = self._queue_url.split('/')
+            url_element_list = self.queue_url.split('/')
 
             # Get the index of the user id relative to the length of
             # the url element array
@@ -97,7 +97,7 @@ class Subscriber:
         """
 
         response = self._client_obj.receive_message(
-            QueueUrl=self._queue_url,
+            QueueUrl=self.queue_url,
             WaitTimeSeconds=0
         )
 
@@ -157,7 +157,7 @@ class Subscriber:
         """
 
         self._client_obj.delete_message(
-            QueueUrl=self._queue_url,
+            QueueUrl=self.queue_url,
             ReceiptHandle=receipt_handle
         )
 
