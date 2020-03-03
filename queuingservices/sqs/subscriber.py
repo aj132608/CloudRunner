@@ -12,7 +12,7 @@ class Subscriber:
 
     def __init__(self, credentials_dict, queue_url=None):
         self._user_id = None
-        self._queue_url = queue_url
+        self.queue_url = queue_url
         self.credentials_dict = credentials_dict
         self._client_obj = self._connect()
 
@@ -32,7 +32,7 @@ class Subscriber:
         region = self.credentials_dict['region']
 
         try:
-            self._queue_url = self.credentials_dict['queue_url']
+            self.queue_url = self.credentials_dict['queue_url']
         except KeyError:
             # You have no url and probably nothing will happen.
             pass
@@ -66,18 +66,18 @@ class Subscriber:
 
         """
 
-        This function will extract the user id from the queuingservices url and
+        This function will extract the user id from the queue url and
         return it.
 
-        :return: user id corresponding to the queuingservices url
+        :return: user id corresponding to the queue url
         """
 
-        if self._queue_url is None:
+        if self.queue_url is None:
             return None
         else:
             # Separate the URL into elements previously separated by
             # forward slashes
-            url_element_list = self._queue_url.split('/')
+            url_element_list = self.queue_url.split('/')
 
             # Get the index of the user id relative to the length of
             # the url element array
@@ -89,15 +89,15 @@ class Subscriber:
 
         """
 
-        This function will receive a batch of messages from a queuingservices
-        specified by the queuingservices url.
+        This function will receive a batch of messages from a queue
+        specified by the queue url.
 
         :return: If there are messages, it will return them. Otherwise, it
         will return None.
         """
 
         response = self._client_obj.receive_message(
-            QueueUrl=self._queue_url,
+            QueueUrl=self.queue_url,
             WaitTimeSeconds=0
         )
 
@@ -143,7 +143,7 @@ class Subscriber:
 
         self._delete_message(receipt_handle=receipt_handle)
 
-        number = Subscriber.run_task()
+        number = Subscriber._run_task()
         print(f"fib(10) = {number}")
 
     def _delete_message(self, receipt_handle):
@@ -157,12 +157,12 @@ class Subscriber:
         """
 
         self._client_obj.delete_message(
-            QueueUrl=self._queue_url,
+            QueueUrl=self.queue_url,
             ReceiptHandle=receipt_handle
         )
 
     @staticmethod
-    def run_task():
+    def _run_task():
 
         """
 
