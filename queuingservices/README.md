@@ -29,6 +29,47 @@ pip install -r requirements.txt
 
 Downloading and setting up Docker is a little bit more involved and can be done from [here](https://www.docker.com/products/docker-desktop).
 
+### Queue Configuration
+
+To use the queuing service, the user must create a configuration of what fits their specific problem. These configurations are held in a master configuration file called config.json.
+
+**Examples**
+
+**Queue configuration for running a RabbitMQ queue**
+
+```
+"queue": {
+    "type": "rmq",
+    "endpoint": "amqp://guest:guest@localhost",
+    "queue_name": "rabbit_queue_1",
+    "exchange_name": "rabbit_exchange_1"
+}
+```
+
+To select RabbitMQ as the queuing service, type must be set equal to rmq.
+The endpoint requested here should be pointing to the RabbitMQ queue server.
+queue_name and exchange_name are optional but can be set by the user.
+
+**Queue configuration for running an SQS queue**
+
+```
+"queue": {
+    "type": "sqs",
+    "env": {
+        "access_key": "YOUR_ACCESS_KEY",
+        "secret_key": "YOUR_SECRET_KEY"
+    },
+    "region": "us-west-2",
+    "queue_name": "sqs_queue_1",
+    "queue_url": "https://region.queue.amazonaws.com/user_id/queue_name",
+}
+```
+To select SQS as the queuing service, type must be set equal to sqs. The env field is requesting the access key and 
+secret key that should be provided by AWS to the user upon the creation of an SQS project with development permissions.
+The region field must be filled in by a standard AWS region like the one shown above. 
+queue_name and queue_url are not required but can be filled in at the user's discretion.
+The queue_url field will, if used, point to an existing SQS queue.
+
 ## Running the tests
 
 To look at the source code for the queuing services tests, go to /tests/queue_tests. There will be the following tests for different aspects of the queuing service.
