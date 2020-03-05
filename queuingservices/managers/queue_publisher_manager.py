@@ -36,7 +36,7 @@ class QueuePublisherManager:
         assert self.queue_type in SUPPORTED_QUEUES, \
             f"Queue Type {self.queue_type} not supported"
 
-    def build_queue_object(self):
+    def build_publisher_object(self):
         """
 
         This function builds the queue object according to the type of queue
@@ -49,7 +49,7 @@ class QueuePublisherManager:
             # Retrieve the SQS Publisher object
             from queuingservices.sqs.publisher import Publisher
 
-            credentials_dict = self.get_sqs_credentials_dict()
+            credentials_dict = self._get_sqs_credentials_dict()
             queue_obj = Publisher(credentials_dict=credentials_dict)
         elif self.queue_type == "rmq":
             # Retrieve the RMQ Publisher object
@@ -62,7 +62,7 @@ class QueuePublisherManager:
 
         return queue_obj
 
-    def get_sqs_credentials_dict(self):
+    def _get_sqs_credentials_dict(self):
         """
 
         This function will construct a credentials dictionary that corresponds

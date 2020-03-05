@@ -26,12 +26,12 @@ if __name__ == "__main__":
         sqs_life_manage = QueueLifecycleManager(queue_config=sqs_queue_config)
 
         # get the correct queue objects
-        rmq_subscriber = rmq_sub_manage.build_queue_object()
-        rmq_publisher = rmq_pub_manage.build_queue_object()
-        rmq_lifecycle = rmq_life_manage.build_queue_object()
-        sqs_subscriber = sqs_sub_manage.build_queue_object()
-        sqs_publisher = sqs_pub_manage.build_queue_object()
-        sqs_lifecycle = sqs_life_manage.build_queue_object()
+        rmq_subscriber = rmq_sub_manage.build_subscribe_object()
+        rmq_publisher = rmq_pub_manage.build_publisher_object()
+        rmq_lifecycle = rmq_life_manage.build_lifecycle_object()
+        sqs_subscriber = sqs_sub_manage.build_subscribe_object()
+        sqs_publisher = sqs_pub_manage.build_publisher_object()
+        sqs_lifecycle = sqs_life_manage.build_lifecycle_object()
 
         # print out each object to confirm that the correct object was returned
         print(f"rmq subscriber object: {rmq_subscriber}")

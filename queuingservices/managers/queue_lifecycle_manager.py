@@ -36,7 +36,7 @@ class QueueLifecycleManager:
         assert self.queue_type in SUPPORTED_QUEUES, \
             f"Queue Type {self.queue_type} not supported"
 
-    def build_queue_object(self):
+    def build_lifecycle_object(self):
         """
 
         This function builds the queue object according to the type of queue
@@ -49,7 +49,7 @@ class QueueLifecycleManager:
             # Retrieve the SQS lifecycle object
             from queuingservices.sqs.queue_lifecycle import QueueLifecycle
 
-            credentials_dict = self.get_sqs_credentials_dict()
+            credentials_dict = self._get_sqs_credentials_dict()
             queue_obj = QueueLifecycle(credentials_dict=credentials_dict)
         elif self.queue_type == "rmq":
             # Retrieve the RMQ lifecycle object
@@ -62,7 +62,7 @@ class QueueLifecycleManager:
 
         return queue_obj
 
-    def get_sqs_credentials_dict(self):
+    def _get_sqs_credentials_dict(self):
         """
 
         This function will construct a credentials dictionary that corresponds

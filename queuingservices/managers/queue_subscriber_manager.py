@@ -36,7 +36,7 @@ class QueueSubscriberManager:
         assert self.queue_type in SUPPORTED_QUEUES, \
             f"Queue Type {self.queue_type} not supported"
 
-    def build_queue_object(self):
+    def build_subscribe_object(self):
         """
 
         This function builds the queue object according to the type of queue
@@ -49,7 +49,7 @@ class QueueSubscriberManager:
             # Retrieve the SQS Subscriber object
             from queuingservices.sqs.subscriber import Subscriber
 
-            credentials_dict = self.get_sqs_credentials_dict()
+            credentials_dict = self._get_sqs_credentials_dict()
             queue_obj = Subscriber(credentials_dict=credentials_dict)
         elif self.queue_type == "rmq":
             # Retrieve the RMQ Subscriber object
@@ -65,7 +65,7 @@ class QueueSubscriberManager:
 
         return queue_obj
 
-    def get_sqs_credentials_dict(self):
+    def _get_sqs_credentials_dict(self):
         """
 
         This function will construct a credentials dictionary that corresponds
