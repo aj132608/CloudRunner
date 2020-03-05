@@ -94,7 +94,7 @@ The queue_url field will, if used, point to an existing SQS queue.
 To look at the source code for the queuing services tests, go to /tests/queue_tests. 
 There will be the following tests for different aspects of the queuing service.
 
-###Rabbit MQ Tests
+### Rabbit MQ Tests
 * queue_start_test.py
 
 This file tests the subscriber or worker in the Rabbit MQ queue that will accept messages.
@@ -194,7 +194,7 @@ If the publisher fails the test, it will print the following message.
 Exception: *whichever exception was thrown*
 ```
 
-###AWS Simple Queuing Service Tests
+### AWS Simple Queuing Service Tests
 * sqs_test.py
 
 This file tests the subscriber or worker in the SQS queue that will accept messages.
@@ -253,7 +253,7 @@ Message Sending was Unsuccessful.
 Exception: *whichever exception was thrown*
 ```
 
-###Queue Manager Interface Tests
+### Queue Manager Interface Tests
 * queue_manager_test.py
 
 This file tests the queue managing interface that utilizes all of the queuing services. For this test, it will send two queue configuration dictionaries to the interface to return objects of each class (RMQ and SQS).

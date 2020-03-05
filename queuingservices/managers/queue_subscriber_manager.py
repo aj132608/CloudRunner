@@ -1,7 +1,7 @@
 SUPPORTED_QUEUES = ("sqs", "rmq", "local")
 
 
-class QueueManager:
+class QueueSubscriberManager:
     """
 
     This class will be sent a queue config dictionary and determine which
