@@ -1,7 +1,7 @@
 SUPPORTED_QUEUES = ("sqs", "rmq", "local")
 
 
-class QueueManager:
+class QueueLifecycleManager:
     """
 
     This class will be sent a queue config dictionary and determine which
@@ -36,7 +36,7 @@ class QueueManager:
         assert self.queue_type in SUPPORTED_QUEUES, \
             f"Queue Type {self.queue_type} not supported"
 
-    def build_queue_object(self):
+    def build_lifecycle_object(self):
         """
 
         This function builds the queue object according to the type of queue
@@ -46,26 +46,23 @@ class QueueManager:
 
         """
         if self.queue_type == "sqs":
-            # Retrieve the SQS Subscriber object
-            from queuingservices.sqs.subscriber import Subscriber
+            # Retrieve the SQS lifecycle object
+            from queuingservices.sqs.queue_lifecycle import QueueLifecycle
 
-            credentials_dict = self.get_sqs_credentials_dict()
-            queue_obj = Subscriber(credentials_dict=credentials_dict)
+            credentials_dict = self._get_sqs_credentials_dict()
+            queue_obj = QueueLifecycle(credentials_dict=credentials_dict)
         elif self.queue_type == "rmq":
-            # Retrieve the RMQ Subscriber object
-            from queuingservices.rabbitmq.subscriber import Subscriber
+            # Retrieve the RMQ lifecycle object
+            from queuingservices.rabbitmq.queue_lifecycle import QueueLifecycle
 
             endpoint = self.queue_config['endpoint']
-            queue_name = self.queue_config['queue_name']
-
-            queue_obj = Subscriber(endpoint=endpoint,
-                                   queue_name=queue_name)
+            queue_obj = QueueLifecycle(endpoint=endpoint)
         else:
             queue_obj = None
 
         return queue_obj
 
-    def get_sqs_credentials_dict(self):
+    def _get_sqs_credentials_dict(self):
         """
 
         This function will construct a credentials dictionary that corresponds
