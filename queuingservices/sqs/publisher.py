@@ -3,7 +3,7 @@ import boto3
 from botocore.client import Config
 
 
-class SQSMessage:
+class Publisher:
     """
 
     This class will be responsible for sending messages to SQS queues

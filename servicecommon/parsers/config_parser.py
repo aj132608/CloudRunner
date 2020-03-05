@@ -75,7 +75,7 @@ class ConfigParser:
 
         :return:
         """
-        return self.config.get("queue")
+        return self.config.get("queuingservices")
 
     def get_storage_type(self):
         return self.get_storage().get("type")

@@ -9,3 +9,4 @@ file_system
 creds/
 configs/
 ~/
+*.env

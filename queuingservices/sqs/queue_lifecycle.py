@@ -3,7 +3,7 @@ import boto3
 from botocore.client import Config
 
 
-class SQSQueue:
+class QueueLifecycle:
     """
 
         This class will be responsible for creating and deleting

@@ -1,4 +1,4 @@
-from queue.sqs.sqs_message import SQSMessage
+from queuingservices.sqs.publisher import Publisher
 from servicecommon.persistor.local.json.json_persistor import JsonPersistor
 
 
@@ -10,7 +10,7 @@ restore_obj = JsonPersistor(dict=None,
 
 credentials_dict = restore_obj.restore()
 
-sqs_message = SQSMessage(credentials_dict=credentials_dict)
+sqs_message = Publisher(credentials_dict=credentials_dict)
 
 response = sqs_message.get_client_object().get_queue_url(
     QueueName='myqueue.fifo'

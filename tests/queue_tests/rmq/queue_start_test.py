@@ -1,11 +1,27 @@
-from queue.rabbitmq.queue_server import QueueServer
+from queuingservices.rabbitmq.subscriber import Subscriber
+from queuingservices.rabbitmq.queue_lifecycle import QueueLifecycle
 
 
 if __name__ == "__main__":
-    queue_obj = QueueServer(queue_name="ss_queue",
-                            exchange_name="jobs",
-                            exchange_type="direct",
-                            endpoint="amqp://guest:guest@localhost")
+    endpoint = "amqp://guest:guest@localhost"
+    queue_name = "project_queue"
+    exchange_name = "project_exchange"
+
+    queue_obj = QueueLifecycle(endpoint=endpoint)
+
+    response = queue_obj.create_queue(queue_name=queue_name)
+
+    if response:
+        print("Queue was successfully created!")
+
+    response = queue_obj.create_and_bind_exchange(queue_name=queue_name,
+                                                  exchange_name=exchange_name)
+
+    if response:
+        print("Exchange was successfully created and bound!")
+
+    queue_obj = Subscriber(queue_name=queue_name,
+                           endpoint=endpoint)
 
     try:
         queue_obj.start_server()
