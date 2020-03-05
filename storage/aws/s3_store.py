@@ -187,14 +187,14 @@ class S3Storage:
         # delete the bucket
         bucket.delete()
 
-# credential = {
-#     "region": "us-west-1",
-#     "access_key": "AKIAWA6NKF4S6U2THRHT",
-#     "secret_key": "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",
-# }
-# s3 = S3Storage(credential)
-# buckets = s3.get_buckets(True)
-# print(buckets)
+credential = {
+    "region": "us-west-1",
+    "access_key": "AKIAWA6NKF4S6U2THRHT",
+    "secret_key": "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",
+}
+s3 = S3Storage(credential)
+buckets = s3.get_buckets(True)
+print(buckets)
 # bucket_obj = s3.get_bucket_object(buckets[-2])
 # files = s3.get_files_in_bucket(bucket_obj, True)
 #

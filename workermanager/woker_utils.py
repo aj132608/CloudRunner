@@ -1,4 +1,6 @@
 import os
+import shlex
+import subprocess
 
 import yaml
 
@@ -47,6 +49,18 @@ _aws_instance_specs = {
         }
 }
 
+def run_command(command):
+    process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
+    complete_output = ""
+    while True:
+        output = process.stdout.readline()
+        complete_output += output.decode("utf-8")
+        if output == b'' and process.poll() is not None:
+            break
+        if output:
+            print(output.strip())
+    rc = process.poll()
+    return rc, complete_output
 
 def persist_essential_configs(queue_config, storage_config, persist_path):
     """

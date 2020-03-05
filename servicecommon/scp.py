@@ -19,12 +19,12 @@ def scp_send(hostname, username, local_filepath,
         ssh.connect(hostname=hostname,
                     username=username,
                     key_filename=key_filepath)
-
         with SCPClient(ssh.get_transport()) as scp:
             scp.put(local_filepath, instance_filepath,
                     recursive=True)
         return True
-    except:
+    except Exception as e:
+        print(e)
         return False
 
 def scp_get(hostname, username, local_filepath,
