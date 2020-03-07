@@ -251,8 +251,6 @@ class GCloudWorkerManager:
         # Generate
         machine_type = self._generate_machine_type(resources_needed=resources_needed)
 
-        startup_script_path = os.path.join(os.getcwd(),
-                                           "worker/base_startup_installation.sh")
         startup_script = self._construct_startup_script(user_startup_script)
 
         config = {
@@ -357,7 +355,7 @@ class GCloudWorkerManager:
         return worker_ip
 
     def start_worker(self, queue_config, storage_config, resources_needed=None, blocking=True,
-                     ssh_keypair=None, timeout=300, ports=None, name=None):
+                     ssh_keypair=None, timeout=300, ports=None, name=None, user_script=None):
         """
         This function is used to start EC2 the instance on AWS.
         :param queue_config: Queue Config
@@ -381,7 +379,7 @@ class GCloudWorkerManager:
             name = self._generate_instance_name()
 
         instance_config = self._generate_instance_config(resources_needed, queue_config,
-                                                         storage_config)
+                                                         storage_config, user_script)
         instance_config['name'] = name
 
         op = self.compute_client.instances().insert(
@@ -434,9 +432,10 @@ class GCloudWorkerManager:
         """
         resources_needed = self.worker_dict["resources"]
         num_workers = resources_needed.get("num_workers", 1)
+        user_script = self.worker_dict["user_script"]
         for _ in range(num_workers):
             self.start_worker(queue_config, storage_config, resources_needed, blocking,
-                              ssh_keypair, timeout, ports)
+                              ssh_keypair, timeout, ports, user_script=user_script)
 
     def _wait_for_operation(self, operation):
         """
