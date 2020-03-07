@@ -3,7 +3,6 @@ from workermanager.gcloud_worker import GCloudWorkerManager
 worker_config = {
     "env": {
         "cdsm_compute_cred_path": "/Users/mo/Desktop/mineai/Cloud Runner Extras/_accesskeys/MineAI-5d1871963a9d.json",
-
     },
     "resources": {
         'cpus': 1,

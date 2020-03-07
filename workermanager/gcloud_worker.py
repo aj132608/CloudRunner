@@ -5,7 +5,8 @@ import uuid
 
 from google.oauth2 import service_account
 
-from workermanager.woker_utils import memstr_to_int, persist_essential_configs, run_command
+from workermanager.woker_utils import memstr_to_int, persist_essential_configs, run_command, \
+    insert_script_into_startup_script
 
 
 class GCloudWorkerManager:
@@ -119,6 +120,35 @@ class GCloudWorkerManager:
         else:
             return op['name']
 
+    def _construct_startup_script(self, user_script=None):
+        """
+        This function is used to construct the startup script.
+        :param user_script: Location of user startup script
+        :return startup_script: Startup script content as
+        a byte stream
+        """
+        base_startup_script_path = os.path.join(os.getcwd(),
+                                                "worker/base_startup_installation.sh")
+
+        with open(base_startup_script_path) as f:
+            base_startup_script = f.read()
+
+        python_script_path = os.path.join(os.getcwd(),
+                                          "shellscripts/python3.7_install.sh")
+        cloud_dsm_clone_path = os.path.join(os.getcwd(),
+                                          "shellscripts/cloud_runner_git_clone.sh")
+        docker_installation = os.path.join(os.getcwd(),
+                                            "shellscripts/docker_installation.sh")
+
+
+        import pdb; pdb.set_trace()
+        startup_script = insert_script_into_startup_script(python_script_path, base_startup_script)
+        startup_script = insert_script_into_startup_script(cloud_dsm_clone_path, startup_script)
+        startup_script = insert_script_into_startup_script(docker_installation, startup_script)
+        startup_script = insert_script_into_startup_script(user_script, startup_script)
+
+        return startup_script
+
     def _generate_instance_name(self):
         """
         This function generates a unique ID for the worker attached with
@@ -224,6 +254,7 @@ class GCloudWorkerManager:
 
         startup_script_path = os.path.join(os.getcwd(),
                                            "worker/base_startup_installation.sh")
+        self._construct_startup_script()
         with open(startup_script_path) as f:
             startup_script = f.read()
 

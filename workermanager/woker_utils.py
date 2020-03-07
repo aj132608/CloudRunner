@@ -1,5 +1,8 @@
 import os
+import random
 import shlex
+import string
+
 import subprocess
 
 import yaml
@@ -7,47 +10,78 @@ import yaml
 from servicecommon.persistor.local.json.json_persistor import JsonPersistor
 
 _aws_instance_specs = {
-        'c4.large': {
-            'cpus': 2,
-            'ram': '3.75g',
-            'gpus': 0
-        },
-        'c4.xlarge': {
-            'cpus': 4,
-            'ram': '7.5g',
-            'gpus': 0
-        },
-        'c4.2xlarge': {
-            'cpus': 8,
-            'ram': '15g',
-            'gpus': 0
-        },
-        'c4.4xlarge': {
-            'cpus': 16,
-            'ram': '30g',
-            'gpus': 0
-        },
-        'p2.xlarge': {
-            'cpus': 4,
-            'ram': '61g',
-            'gpus': 1
-        },
-        'c4.8xlarge': {
-            'cpus': 36,
-            'ram': '60g',
-            'gpus': 0
-        },
-        'p2.8xlarge': {
-            'cpus': 32,
-            'ram': '488g',
-            'gpus': 8
-        },
-        'p2.16xlarge': {
-            'cpus': 64,
-            'ram': '732g',
-            'gpus': 16
-        }
+    'c4.large': {
+        'cpus': 2,
+        'ram': '3.75g',
+        'gpus': 0
+    },
+    'c4.xlarge': {
+        'cpus': 4,
+        'ram': '7.5g',
+        'gpus': 0
+    },
+    'c4.2xlarge': {
+        'cpus': 8,
+        'ram': '15g',
+        'gpus': 0
+    },
+    'c4.4xlarge': {
+        'cpus': 16,
+        'ram': '30g',
+        'gpus': 0
+    },
+    'p2.xlarge': {
+        'cpus': 4,
+        'ram': '61g',
+        'gpus': 1
+    },
+    'c4.8xlarge': {
+        'cpus': 36,
+        'ram': '60g',
+        'gpus': 0
+    },
+    'p2.8xlarge': {
+        'cpus': 32,
+        'ram': '488g',
+        'gpus': 8
+    },
+    'p2.16xlarge': {
+        'cpus': 64,
+        'ram': '732g',
+        'gpus': 16
+    }
 }
+
+def rand_string(length):
+    return "".join([random.choice(string.ascii_letters + string.digits)
+                    for n in range(length)])
+
+def insert_script_into_startup_script(script_to_insert, startup_script_str):
+    if script_to_insert is None:
+        return startup_script_str
+
+    try:
+        with open(os.path.abspath(os.path.expanduser(
+                script_to_insert))) as f:
+            user_startup_script_lines = f.read().splitlines()
+    except BaseException:
+        if script_to_insert is not None:
+            print("User startup script (%s) cannot be loaded" %
+                  script_to_insert)
+        return startup_script_str
+
+    startup_script_lines = startup_script_str.splitlines()
+    new_startup_script_lines = []
+    for line in startup_script_lines:
+        new_startup_script_lines.append("%s\n" % line)
+
+    new_startup_script = "".join(new_startup_script_lines)
+    print('Inserting the following user startup script'
+          ' into the default startup script:')
+    print("\n".join(user_startup_script_lines))
+
+    return new_startup_script
+
 
 def run_command(command):
     process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
@@ -61,6 +95,7 @@ def run_command(command):
             print(output.strip())
     rc = process.poll()
     return rc, complete_output
+
 
 def persist_essential_configs(queue_config, storage_config, persist_path):
     """
@@ -81,6 +116,7 @@ def persist_essential_configs(queue_config, storage_config, persist_path):
                                    "storage_config",
                                    configs_path)
     json_persistor.persist()
+
 
 def _get_aws_ondemand_prices(instances=_aws_instance_specs.keys()):
     """
