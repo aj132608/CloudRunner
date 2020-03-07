@@ -14,17 +14,17 @@ class QueueLifecycleManager:
 
     """
 
-    def __init__(self, queue_config, storage_config=None):
+    def __init__(self, queue_config, storage_obj=None):
         """
 
         The constructor will take in the queue and storage config files and
         validate them.
 
         :param queue_config:
-        :param storage_config:
+        :param storage_obj:
         """
         self.queue_config = queue_config
-        self.storage_config = storage_config
+        self.storage_obj = storage_obj
 
         if "type" not in self.queue_config.keys():
             raise ValueError("Queue type not found. Please update creds.json"

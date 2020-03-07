@@ -9,7 +9,7 @@ def submit_n_tasks(obj, n):
 
 
 if __name__ == "__main__":
-    task_obj = Publisher(endpoint="amqp://guest:guest@localhost")
+    task_obj = Publisher(endpoint="amqp://guest:guest@0.tcp.ngrok.io:12474")
 
     try:
         submit_n_tasks(task_obj, 10)
