@@ -29,7 +29,8 @@ class StorageCreator:
         :returns storage_obj: Storage object of the appropriate Cloud
         provider
         """
-        credentials = extract_environment_variables()
+        env = self.storage_config["env"]
+        credentials = extract_environment_variables(env)
         if self.storage_type in ("minio", "s3"):
             credentials["endpoint_url"] = \
                 self.storage_config["endpoint_url"]
