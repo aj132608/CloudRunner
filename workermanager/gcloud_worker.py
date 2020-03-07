@@ -141,7 +141,6 @@ class GCloudWorkerManager:
                                             "shellscripts/docker_installation.sh")
 
 
-        import pdb; pdb.set_trace()
         startup_script = insert_script_into_startup_script(python_script_path, base_startup_script)
         startup_script = insert_script_into_startup_script(cloud_dsm_clone_path, startup_script)
         startup_script = insert_script_into_startup_script(docker_installation, startup_script)
@@ -230,7 +229,7 @@ class GCloudWorkerManager:
         run_command(command)
 
     def _generate_instance_config(self, resources_needed,
-                                  queue_config, storage_config):
+                                  queue_config, storage_config, user_startup_script):
         """
 
         :return:
@@ -254,9 +253,7 @@ class GCloudWorkerManager:
 
         startup_script_path = os.path.join(os.getcwd(),
                                            "worker/base_startup_installation.sh")
-        self._construct_startup_script()
-        with open(startup_script_path) as f:
-            startup_script = f.read()
+        startup_script = self._construct_startup_script(user_startup_script)
 
         config = {
             # 'user-name': "ubuntu",
@@ -350,7 +347,8 @@ class GCloudWorkerManager:
 
     def _get_worker_ip(self, worker_name):
         """
-
+        This function fetches the public IP Address
+        of the instance.
         :param worker_name:
         :return:
         """
@@ -463,3 +461,4 @@ class GCloudWorkerManager:
                 return result
 
             time.sleep(1)
+

@@ -52,18 +52,31 @@ _aws_instance_specs = {
     }
 }
 
+
 def rand_string(length):
     return "".join([random.choice(string.ascii_letters + string.digits)
                     for n in range(length)])
 
+
 def insert_script_into_startup_script(script_to_insert, startup_script_str):
+    """
+
+    :param script_to_insert:
+    :param startup_script_str:
+    :return:
+    """
     if script_to_insert is None:
         return startup_script_str
 
     try:
         with open(os.path.abspath(os.path.expanduser(
                 script_to_insert))) as f:
-            user_startup_script_lines = f.read().splitlines()
+            user_startup_script_lines = f.read()
+
+        # user_startup_script_lines.rstrip()
+        user_startup_script_lines = user_startup_script_lines.splitlines()
+
+
     except BaseException:
         if script_to_insert is not None:
             print("User startup script (%s) cannot be loaded" %
@@ -75,10 +88,13 @@ def insert_script_into_startup_script(script_to_insert, startup_script_str):
     for line in startup_script_lines:
         new_startup_script_lines.append("%s\n" % line)
 
+    for line in user_startup_script_lines:
+        new_startup_script_lines.append("%s\n" % line)
+
     new_startup_script = "".join(new_startup_script_lines)
     print('Inserting the following user startup script'
           ' into the default startup script:')
-    print("\n".join(user_startup_script_lines))
+    print("\n".join(startup_script_lines))
 
     return new_startup_script
 
