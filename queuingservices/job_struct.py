@@ -4,6 +4,7 @@ class JobStruct:
     This class describes the path for the Job
     structure.
     """
+    
     def __init__(self, storage_config, bucket_name, experiment_id):
         """
 
