@@ -4,7 +4,8 @@ class JobStruct:
     This class describes the path for the Job
     structure.
     """
-    def __init__(self, storage_config, bucket_name, experient_id):
+    
+    def __init__(self, storage_config, bucket_name, experiment_id):
         """
 
         :param storage_config: The storage config should be of the format ->
@@ -20,4 +21,4 @@ class JobStruct:
         """
         self.storage_config = storage_config
         self.bucket_name = bucket_name
-        self.experiment_id = experient_id
+        self.experiment_id = experiment_id

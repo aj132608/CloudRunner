@@ -13,20 +13,19 @@ from workermanager.woker_utils import memstr_to_int, \
 
 
 class EC2WorkerManager:
+    """
+    This class is used to manage EC2 workers
+    for a specific project.
+    """
 
     def __init__(self, project_id, worker_dict):
         """
         This class sets up a worker manager given the
         config dictionary.
+        :param project_id: Id of the project
         :param worker_dict: Config for the workers
-        :param master_config: Masterconfig for Cloud DSM
         """
-        self.cloud_dsm_base_path = "."
-
-        # import pdb;
-        # pdb.set_trace()
-
-        # '/Users/mo/Desktop/mineai/CloudRunner/~'
+        self.cloud_dsm_base_path = "~/"
 
         if not os.path.exists(self.cloud_dsm_base_path):
             os.makedirs(self.cloud_dsm_base_path)
@@ -76,14 +75,23 @@ class EC2WorkerManager:
         """
         self.project_id = project_id
 
-    def reset_conenction(self, worker_dict, reset_instances=True,
+    def reset_connection(self, worker_dict, reset_instances=True,
                          shutdown_instances=True):
         """
         This function resets the connection account
         associated with this class
         :param worker_dict: Dictionary of the worker config
+        :param reset_instances: If this is set to True, all
+        track of instances is removed.
+        :param shutdown_instances: If this is set to True,
+        all of these instances are shutdown and the track is
+        removed as well.
         :returns nothing:
         """
+        if reset_instances:
+            self.instances = []
+        if shutdown_instances:
+            self.shutdown()
         self.worker_dict = worker_dict
         self.connect()
 
@@ -119,9 +127,11 @@ class EC2WorkerManager:
 
     def _get_image_id(self, image_type=None):
         """
+        TODO: Add Ubuntu 18.04 in aws_amis.yaml
         This function returns an appropriate image
         id based on the region and the
         base image type specified.
+        :param image_type: Type of Image (Version of OS)
         :returns: String containing the image id
         """
         price_path = os.path.join(
@@ -279,14 +289,14 @@ class EC2WorkerManager:
         instance.restart()
 
     def start_worker(self, queue_config, storage_config, resources_needed=None, blocking=True,
-                     ssh_keypair=None, timeout=300, ports=None, name=None):
+                     ssh_keypair=None, timeout=300, ports=None, name=None, image_specs=None):
         """
         This function is used to start EC2 the instance on AWS.
         :param queue_config: Queue Config
         :param storage_config: Storage Config
         :param resources_needed: Dictionary of the resources
         :param blocking: Wait until instance has booted up
-        :param ssh_keypair: Keypair to grant SSH Access.
+        :param ssh_keypair: Keypair Dict to grant SSH Access.
         The filename without the .pem extension
         :param timeout:
         :param ports: Ports that need to be assigned.
@@ -298,7 +308,12 @@ class EC2WorkerManager:
         if resources_needed is None:
             resources_needed = {}
 
-        imageid = self._get_image_id()
+        # Check if Image Specs are specified
+        if image_specs is not None:
+            image_type = image_specs["image_type"] # More like Version of OS
+        else:
+            image_type = None
+        imageid = self._get_image_id(image_type)
 
         if name is None:
             name = self._generate_instance_name()
@@ -379,8 +394,7 @@ class EC2WorkerManager:
 
         # Persist Queue Config and Studio Config
         configs_local_path = os.path.join(self.cloud_dsm_base_path, "configs")
-        configs_local_path = os.path.abspath(configs_local_path
-                                             )
+        configs_local_path = os.path.abspath(configs_local_path)
         persist_essential_configs(queue_config, storage_config, configs_local_path)
         configs_instance_path = "configs"
 
@@ -397,7 +411,7 @@ class EC2WorkerManager:
             except:
                 pass
 
-    def shutdown_instance(self, instance):
+    def _stop_instance(self, instance):
         """
         This function shutsdown the given instance
         :param instance: Instance Object or name
@@ -434,6 +448,6 @@ class EC2WorkerManager:
         """
         for instance in self.instances:
             instance_obj = instance["object"]
-            self.shutdown_instance(instance_obj)
+            self._stop_instance(instance_obj)
 
-        self.instances = {}
+        self.instances = []

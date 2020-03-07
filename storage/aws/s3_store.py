@@ -1,6 +1,9 @@
+import logging
+
 import boto3
 import os
 
+from awscli.errorhandler import ClientError
 from botocore.client import Config
 
 
@@ -32,13 +35,13 @@ class S3Storage:
                                              aws_access_key_id=access_key,
                                              aws_secret_access_key=secret_key,
                                              config=Config(signature_version='s3v4'),
-                                             endpoint=endpoint_url,
+                                             endpoint_url=endpoint_url,
                                              region_name=region)
         connection_client = boto3.client('s3',
                                          aws_access_key_id=access_key,
                                          aws_secret_access_key=secret_key,
                                          config=Config(signature_version='s3v4'),
-                                         endpoint=endpoint_url,
+                                         endpoint_url=endpoint_url,
                                          region_name=region)
 
         return connection_resource, connection_client
@@ -73,20 +76,25 @@ class S3Storage:
         :param bucket_name: Name of the bucket
         :return bucket: Object of that bucket
         """
-        try:
-            bucket = self.get_bucket_object(bucket_name)
+        region = self.credentials_dict['region']
+        if bucket_name in self.get_buckets(True):
             print(f"Bucket already exists")
 
             if start_new:
                 self.delete_bucket(bucket_name)
-                bucket = self.storage_client.create_bucket(bucket_name)
-
-        except:
+                bucket = self.storage_client.create_bucket(Bucket=bucket_name,
+                                                           CreateBucketConfiguration={
+                                                               'LocationConstraint': region
+                                                           })
+        else:
             print(f"Creating new bucket")
             try:
-                bucket = self.storage_client.create_bucket(bucket_name)
-            except:
-                print(f"Failed to create bucket")
+                bucket = self.storage_client.create_bucket(Bucket=bucket_name,
+                                                           CreateBucketConfiguration={
+                                                               'LocationConstraint': region
+                                                           })
+            except Exception as e:
+                print(f"Failed to create bucket: {e}")
                 bucket = False
 
         return bucket
@@ -106,21 +114,31 @@ class S3Storage:
 
         return buckets
 
-    def persist_file(self, file_name, local_file_path, bucket):
+    def persist_file(self, bucket, local_file_path, s3_key=None):
         """
-        This function stores the given file in an already existing bucket
-        :param file_name: Name of the file that needs to be attached while uploading
-        :param local_file_path: Location of the file.
         :param bucket: Name/Instance of the bucket to store into.
+        :param s3_key: Path on the bucket
+        :param local_file_path: Location of the file.
+        :return:
+        """
+        file = open(local_file_path, 'rb')
+        if s3_key is None:
+            s3_key = os.path.basename(local_file_path)
+        self.storage_client.put_object(Bucket=bucket,
+                                       Key=(s3_key), Body=local_file_path)
+        file.close()
+
+    def download_file(self, bucket, key, local_storage_path):
+        """
+        This function downloads a given file to a specified path from
+        the buckets root.
+        :param local_storage_path: Path to store
+        :param key: Path of the file to where to download
+        :param bucket: Name/Object of the Bucket to download from.
         :returns nothing:
         """
-
-        try:
-            self.storage_client.upload_file(local_file_path,
-                                            bucket,
-                                            file_name)
-        except Exception as e:
-            print(f"File Upload to S3 failed, {e}")
+        with open(local_storage_path, 'wb') as data:
+            self.storage_client.download_fileobj(bucket, key, data)
 
     def get_files_in_bucket(self, bucket, return_names=False):
         """
@@ -149,27 +167,6 @@ class S3Storage:
 
         return blob_list
 
-    def download_file(self, file_name, file_path,
-                      bucket):
-        """
-        This function downloads a given file to a specified path from
-        the bucket specified.
-        :param file_name: Name of the file to download
-        :param file_path: Path of the file to where to download
-        :param bucket: Name of the Bucket to download from.
-        :returns nothing:
-        """
-        files = self.get_files_in_bucket(bucket, True)
-        if file_name not in files:
-            raise FileNotFoundError(f"File {file_name} does not "
-                                    f"exist in bucket {bucket}")
-            return
-
-        file_path = os.path.join(file_path, file_name)
-        self.storage_client.download_file(bucket,
-                                          file_name,
-                                          file_path)
-
     def delete_bucket(self, bucket):
         """
         Takes in a boto3 object and a bucket name. This function deletes the
@@ -188,13 +185,21 @@ class S3Storage:
         bucket.delete()
 
 # credential = {
-#     "region": "us-west-1",
-#     "access_key": "AKIAWA6NKF4S6U2THRHT",
-#     "secret_key": "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",
+#     "region": "us-west-2",
+#     "cdsm_storage_access_key": "AKIAWA6NKF4SYIQAN6Q4",
+#     "cdsm_storage_secret_key": "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",
+#     "endpoint_url": "https://s3-us-west-2.amazonaws.com"
 # }
 # s3 = S3Storage(credential)
+# s3.download_folder("alexjfucker", "hello")
 # buckets = s3.get_buckets(True)
 # print(buckets)
+# s3.create_bucket("alexjfucker")
+# print(buckets)
+# s3.persist_file("alexjfucker", "hello/why/Cloud Runner.pdf", "./Cloud DSM.pdf")
+
+# r = s3.download_file("alexjfucker", "hello/why/Cloud Runner.pdf", "./CR.pdf")
+# print(r.read())
 # bucket_obj = s3.get_bucket_object(buckets[-2])
 # files = s3.get_files_in_bucket(bucket_obj, True)
 #

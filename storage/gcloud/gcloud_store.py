@@ -55,20 +55,18 @@ class GCloudStorage:
         :param bucket_name: Name of the bucket
         :return bucket: Object of that bucket
         """
-        try:
-            bucket = self.storage_client.get_bucket(bucket_name)
+        if bucket_name in self.get_buckets(True):
             print(f"Bucket already exists")
 
             if start_new:
                 self.delete_bucket(bucket_name)
                 bucket = self.storage_client.create_bucket(bucket_name)
-
-        except:
+        else:
             print(f"Creating new bucket")
             try:
                 bucket = self.storage_client.create_bucket(bucket_name)
-            except:
-                print(f"Failed to create bucket")
+            except Exception as e:
+                print(f"Failed to create bucket: {e}")
                 bucket = False
 
         return bucket
@@ -107,7 +105,6 @@ class GCloudStorage:
         """
         bucket_obj = self.get_bucket_object(bucket)
         blob = bucket_obj.blob(file_name)
-
         try:
             blob.upload_from_filename(local_file_path)
         except Exception as e:
@@ -140,13 +137,13 @@ class GCloudStorage:
 
         return blob_list
 
-    def download_file(self, file_name, file_path,
+    def download_file(self, file_name, local_file_path,
                       bucket):
         """
         This function downloads a given file to a specified path from
         the bucket specified.
-        :param file_name: Name of the file to download
-        :param file_path: Path of the file to where to download
+        :param file_name: Name/Folder/Path of the file to download
+        :param local_file_path: Path of the file to where to download
         :param bucket: Name of the Bucket to download from.
         :returns nothing:
         """
@@ -155,16 +152,22 @@ class GCloudStorage:
             raise FileNotFoundError(f"File {file_name} does not "
                                     f"exist in bucket {bucket}")
 
-
-        file_path = os.path.join(file_path, file_name)
-
         bucket_obj = self.get_bucket_object(bucket)
         blob_object = bucket_obj.blob(file_name)
 
-        blob_object.download_to_filename(file_path)
+        with open(local_file_path, 'wb') as data:
+            blob_object.download_to_file(data)
 
+        # blob_object.download_to_filename(file_path)
 
-
+#
+# creds = {
+#         "cdsm_credential_path": "/Users/mo/Desktop/mineai/Cloud Runner Extras/_accesskeys/MineAI-5d1871963a9d.json",
+# }
+# gcloud_store = GCloudStorage(creds)
+# # gcloud_store.create_bucket("bucket-random")
+# print(gcloud_store.get_buckets())
+# gcloud_store.persist_file("Hello/CR.pdf", "./Cloud DSM.pdf", "bucket-random")
 
 
 

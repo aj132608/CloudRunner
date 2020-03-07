@@ -1,1 +1,0 @@
-exec > >(tee -i ~/ec2_worker_logfile.txt)

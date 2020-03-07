@@ -7,4 +7,6 @@ filesystem.tar
 file_system
 *.json
 creds/
+configs/
+~/
 *.env
