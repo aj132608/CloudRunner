@@ -7,7 +7,6 @@ from storage.storage_creator import StorageCreator
 This server is responsible to initialize the 
 worker.
 """
-
 # Load Configs
 config_path = "/.mineai/configs"
 queue_config_restorer = JsonPersistor(None,
