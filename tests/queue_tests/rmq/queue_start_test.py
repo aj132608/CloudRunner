@@ -1,6 +1,6 @@
 from queuingservices.rabbitmq.subscriber import Subscriber
 from queuingservices.rabbitmq.queue_lifecycle import QueueLifecycle
-
+# 0.tcp.ngrok.io:10503
 
 if __name__ == "__main__":
     endpoint = "amqp://guest:guest@localhost"

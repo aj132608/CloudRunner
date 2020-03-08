@@ -1,4 +1,5 @@
 import boto3
+import json
 
 from botocore.client import Config
 
@@ -137,7 +138,20 @@ class Subscriber:
 
         current_message = messages[0]
 
-        print(f"message: {current_message['Body']}")
+        string_message = current_message['Body']
+
+        dict_message = json.loads(string_message)
+
+        if dict_message['completion']:
+            print(f"Completion was selected")
+        elif dict_message['submission']:
+            print(f"Submission was selected")
+
+        print(f"Bucket: {dict_message['bucket_name']}")
+        print(f"Username: {dict_message['username']}")
+        print(f"Project ID: {dict_message['project_id']}")
+        print(f"Experiment ID: {dict_message['experiment_id']}")
+        print(f"Job ID: {dict_message['job_id']}")
 
         receipt_handle = current_message['ReceiptHandle']
 

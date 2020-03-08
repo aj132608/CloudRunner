@@ -1,3 +1,4 @@
+import json
 import pika
 
 
@@ -65,10 +66,12 @@ class Publisher:
             self._connect()
 
         try:
+            string_message = json.dumps(message)
+
             self._channel.basic_publish(
                 exchange=exchange_name,
                 routing_key=queue_name,
-                body=message,
+                body=string_message,
                 properties=pika.BasicProperties(
                     delivery_mode=2,  # make message persistent
                 ))

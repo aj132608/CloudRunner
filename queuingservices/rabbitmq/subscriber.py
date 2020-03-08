@@ -1,4 +1,5 @@
 import pika
+import json
 
 
 class Subscriber:
@@ -74,6 +75,19 @@ class Subscriber:
         """
 
         print(f" [x] Recieved {body}")
+
+        message_dict = json.loads(body)
+
+        if message_dict['completion']:
+            print("Completion was selected!")
+        elif message_dict['submission']:
+            print("Submission was selected!")
+
+        print(f"Bucket: {message_dict['bucket_name']}")
+        print(f"Username: {message_dict['username']}")
+        print(f"Project ID: {message_dict['project_id']}")
+        print(f"Experiment ID: {message_dict['experiment_id']}")
+        print(f"Job ID: {message_dict['job_id']}")
 
         Subscriber._run_task()
 

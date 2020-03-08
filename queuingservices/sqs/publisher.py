@@ -1,4 +1,5 @@
 import boto3
+import json
 
 from botocore.client import Config
 
@@ -66,7 +67,7 @@ class Publisher:
 
         return self._client_obj
 
-    def send_message(self, message, attributes, queue_url, task_id):
+    def send_message(self, message, queue_url, task_id):
 
         """
 
@@ -84,25 +85,6 @@ class Publisher:
         message = 'Information about current NY Times fiction bestseller for
         week of 12/11/2016.'
 
-        :param attributes:dict - A dictionary of attributes to describe the
-        message being sent.
-
-        Example:
-        attributes = {
-            'Title': {
-                'DataType': 'String',
-                'StringValue': 'The Whistler'
-            },
-            'Author': {
-                'DataType': 'String',
-                'StringValue': 'John Grisham'
-            },
-            'WeeksOn': {
-                'DataType': 'Number',
-                'StringValue': '6'
-            }
-        }
-
         :param queue_url:String - url pointing to the desired queue
 
         Example:
@@ -111,12 +93,13 @@ class Publisher:
         :return: Nothing
         """
 
+        string_message = json.dumps(message)
+
         try:
             message_response = self._client_obj.send_message(
                 QueueUrl=queue_url,
                 DelaySeconds=0,
-                MessageAttributes=attributes,
-                MessageBody=message,
+                MessageBody=string_message,
                 MessageGroupId=task_id,
                 MessageDeduplicationId=task_id
             )

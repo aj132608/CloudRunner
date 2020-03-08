@@ -1,5 +1,8 @@
+import json
+
 from queuingservices.sqs.publisher import Publisher
 from servicecommon.persistor.local.json.json_persistor import JsonPersistor
+from queuingservices.message_struct import MessageStruct
 
 
 CREDENTIALS_PATH = "./creds/aws/sqs/"
@@ -18,28 +21,18 @@ response = sqs_message.get_client_object().get_queue_url(
 
 queue_url = response['QueueUrl']
 
-message = "This is another test"
+message_struct = MessageStruct(bucket_name="cloudrunnerbucket",
+                               username="alex.jirovsky",
+                               experiment_id="experiment0",
+                               project_id="project0",
+                               job_id="job0",
+                               completion=False,
+                               submission=True)
 
-attributes = {
-    'Title': {
-        'DataType': 'String',
-        'StringValue': 'Test Message'
-    },
-    'Author': {
-        'DataType': 'String',
-        'StringValue': 'Alex Jirovsky'
-    },
-    'Age': {
-        'DataType': 'Number',
-        'StringValue': '23'
-    }
-}
-
-task_id = "Alex123456"
+task_id = "Alex126"
 
 sqs_message.send_message(
-    message=message,
-    attributes=attributes,
+    message=message_struct.__dict__,
     queue_url=queue_url,
     task_id=task_id
 )
