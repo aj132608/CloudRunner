@@ -77,8 +77,12 @@ class Publisher:
                 ))
 
             print(f" [x] Sent {message}")
+            self._connection.close()
+
             return True
         except Exception as e:
             print("Message failed to send.")
             print(f"Exception: {e}")
+            if self._connection.is_open:
+                self._connection.close()
             return False
