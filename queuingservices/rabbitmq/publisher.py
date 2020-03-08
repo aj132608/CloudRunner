@@ -1,3 +1,4 @@
+import json
 import pika
 
 
@@ -65,17 +66,23 @@ class Publisher:
             self._connect()
 
         try:
+            string_message = json.dumps(message)
+
             self._channel.basic_publish(
                 exchange=exchange_name,
                 routing_key=queue_name,
-                body=message,
+                body=string_message,
                 properties=pika.BasicProperties(
                     delivery_mode=2,  # make message persistent
                 ))
 
             print(f" [x] Sent {message}")
+            self._connection.close()
+
             return True
         except Exception as e:
             print("Message failed to send.")
             print(f"Exception: {e}")
+            if self._connection.is_open:
+                self._connection.close()
             return False
