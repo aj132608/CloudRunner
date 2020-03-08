@@ -21,7 +21,7 @@ class QueueSubscriberManager:
         validate them.
 
         :param queue_config:
-        :param storage_config:
+        :param storage_obj:
         """
         self.queue_config = queue_config
         self.storage_obj = storage_obj
@@ -50,7 +50,8 @@ class QueueSubscriberManager:
             from queuingservices.sqs.subscriber import Subscriber
 
             credentials_dict = self._get_sqs_credentials_dict()
-            queue_obj = Subscriber(credentials_dict=credentials_dict)
+            queue_obj = Subscriber(credentials_dict=credentials_dict,
+                                   storage_obj=self.storage_obj)
         elif self.queue_type == "rmq":
             # Retrieve the RMQ Subscriber object
             from queuingservices.rabbitmq.subscriber import Subscriber
@@ -59,7 +60,8 @@ class QueueSubscriberManager:
             queue_name = self.queue_config['queue_name']
 
             queue_obj = Subscriber(endpoint=endpoint,
-                                   queue_name=queue_name)
+                                   queue_name=queue_name,
+                                   storage_obj=self.storage_obj)
         else:
             queue_obj = None
 

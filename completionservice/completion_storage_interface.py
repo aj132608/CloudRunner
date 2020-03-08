@@ -2,17 +2,14 @@ from storage.storage_creator import StorageCreator
 
 
 class CompletionStorageInterface:
-    def __init__(self, storage_config):
+    def __init__(self, storage_obj):
         """
 
         Takes in the user's storage configuration and gets the appropriate
         storage object.
 
-        :param storage_config: User's configuration containing information
-        on their desired storage.
         """
-        self.storage_config = storage_config
-        self._storage_obj = StorageCreator(storage_config=self.storage_config).build_storage_object()
+        self._storage_obj = storage_obj
 
     def get_job_data(self, bucket, username, project_id, experiment_id, job_id, local_path):
         """
