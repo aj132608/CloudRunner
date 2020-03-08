@@ -1,7 +1,10 @@
 import boto3
 import json
+import os
 
 from botocore.client import Config
+
+from completionservice.completion_storage_interface import CompletionStorageInterface
 
 
 class Subscriber:
@@ -11,9 +14,10 @@ class Subscriber:
 
     """
 
-    def __init__(self, credentials_dict, queue_url=None):
+    def __init__(self, credentials_dict, queue_url=None, storage_obj=None):
         self._user_id = None
         self.queue_url = queue_url
+        self.storage_obj = storage_obj
         self.credentials_dict = credentials_dict
         self._client_obj = self._connect()
 
@@ -140,18 +144,27 @@ class Subscriber:
 
         string_message = current_message['Body']
 
-        dict_message = json.loads(string_message)
+        message_dict = json.loads(string_message)
 
-        if dict_message['completion']:
-            print(f"Completion was selected")
-        elif dict_message['submission']:
+        if message_dict['completion']:
+            # build the local path to download job data
+            local_path = f"{os.getcwd()}/{message_dict['experiment_id']}/{message_dict['job_id']}.tar"
+
+            self.retrieve_job_data(bucket=message_dict['bucket_name'],
+                                   username=message_dict['username'],
+                                   project_id=message_dict['project_id'],
+                                   experiment_id=message_dict['experiment_id'],
+                                   job_id=message_dict['job_id'],
+                                   local_path=local_path)
+
+        elif message_dict['submission']:
             print(f"Submission was selected")
 
-        print(f"Bucket: {dict_message['bucket_name']}")
-        print(f"Username: {dict_message['username']}")
-        print(f"Project ID: {dict_message['project_id']}")
-        print(f"Experiment ID: {dict_message['experiment_id']}")
-        print(f"Job ID: {dict_message['job_id']}")
+        print(f"Bucket: {message_dict['bucket_name']}")
+        print(f"Username: {message_dict['username']}")
+        print(f"Project ID: {message_dict['project_id']}")
+        print(f"Experiment ID: {message_dict['experiment_id']}")
+        print(f"Job ID: {message_dict['job_id']}")
 
         receipt_handle = current_message['ReceiptHandle']
 
@@ -222,3 +235,31 @@ class Subscriber:
                 print(f"Exception: {e}")
                 print("Closing Worker")
                 break
+
+    def retrieve_job_data(self, bucket, username, project_id,
+                          experiment_id, job_id, local_path):
+        """
+
+        This function will download a job file to a specified location with
+        a specified file name locally.
+
+        :param bucket:
+        :param username:
+        :param project_id:
+        :param experiment_id:
+        :param job_id:
+        :param local_path:
+        :return:
+        """
+        storage_master_obj = CompletionStorageInterface(storage_obj=
+                                                        self.storage_obj)
+
+        if local_path is None:
+            local_path = f"{job_id}.tar"
+
+        storage_master_obj.get_job_data(bucket=bucket,
+                                        username=username,
+                                        project_id=project_id,
+                                        experiment_id=experiment_id,
+                                        job_id=job_id,
+                                        local_path=local_path)

@@ -17,6 +17,6 @@ if __name__ == "__main__":
     # response = storage_obj.create_bucket('testbucket', start_new=True)
     # print(response)
 
-    storage_obj.persist_file(s3_key='project0/experiment0/completion/job0.tar',
+    storage_obj.persist_file(s3_key='alex.jirovsky/project0/experiment0/completion/job0.tar',
                              local_file_path='requirements.txt',
                              bucket='cloudrunneralex')
