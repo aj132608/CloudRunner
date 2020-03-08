@@ -5,4 +5,4 @@ sudo apt-get update
 sudo apt-get install -y python3.7
 
 echo " ############# Installing PIP ############# \n "
-sudp apt install -y python3-pip
+sudo apt install -y python3-pip
