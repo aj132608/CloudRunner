@@ -4,8 +4,8 @@ from queuingservices.rabbitmq.publisher import Publisher
 def submit_n_tasks(obj, n):
     for task_num in range(1, n+1):
         response = obj.send_message(message=f"{task_num}",
-                                    queue_name="project_queue",
-                                    exchange_name="project_exchange")
+                                    queue_name="rabbit_queue_1",
+                                    exchange_name="rabbit_exchange_1")
 
 
 if __name__ == "__main__":
