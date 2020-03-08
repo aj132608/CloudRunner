@@ -3,7 +3,7 @@ from queuingservices.message_struct import MessageStruct
 
 
 if __name__ == "__main__":
-    message_struct = MessageStruct(bucket_name="cloudrunnerbucket",
+    message_struct = MessageStruct(bucket_name="cloudrunneralex",
                                    username="alex.jirovsky",
                                    experiment_id="experiment0",
                                    project_id="project0",

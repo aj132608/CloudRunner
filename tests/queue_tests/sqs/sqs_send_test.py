@@ -21,15 +21,15 @@ response = sqs_message.get_client_object().get_queue_url(
 
 queue_url = response['QueueUrl']
 
-message_struct = MessageStruct(bucket_name="cloudrunnerbucket",
+message_struct = MessageStruct(bucket_name="cloudrunneralex",
                                username="alex.jirovsky",
                                experiment_id="experiment0",
                                project_id="project0",
                                job_id="job0",
-                               completion=False,
-                               submission=True)
+                               completion=True,
+                               submission=False)
 
-task_id = "Alex126"
+task_id = "Alex12345"
 
 sqs_message.send_message(
     message=message_struct.__dict__,

@@ -1,5 +1,8 @@
 import pika
 import json
+import os
+
+from completionservice.completion_storage_interface import CompletionStorageInterface
 
 
 class Subscriber:
@@ -12,12 +15,13 @@ class Subscriber:
 
     """
 
-    def __init__(self, endpoint, queue_name):
+    def __init__(self, endpoint, queue_name, storage_obj=None):
         self.worker_busy = False
         self._connection = None
         self._channel = None
         self.queue_name = queue_name
         self.endpoint = endpoint
+        self.storage_obj = storage_obj
         self._connection, self._channel = self._connect()
 
     def _connect(self):
@@ -54,8 +58,7 @@ class Subscriber:
 
         self._connection, self._channel = self._connect()
 
-    @staticmethod
-    def _callback(ch, method, props, body):
+    def _callback(self, ch, method, props, body):
 
         """
 
@@ -79,7 +82,16 @@ class Subscriber:
         message_dict = json.loads(body)
 
         if message_dict['completion']:
-            print("Completion was selected!")
+            # build the local path to download job data
+            local_path = f"{os.getcwd()}/{message_dict['experiment_id']}/{message_dict['job_id']}.tar"
+
+            self.retrieve_job_data(bucket=message_dict['bucket_name'],
+                                   username=message_dict['username'],
+                                   project_id=message_dict['project_id'],
+                                   experiment_id=message_dict['experiment_id'],
+                                   job_id=message_dict['job_id'],
+                                   local_path=local_path)
+
         elif message_dict['submission']:
             print("Submission was selected!")
 
@@ -88,8 +100,6 @@ class Subscriber:
         print(f"Project ID: {message_dict['project_id']}")
         print(f"Experiment ID: {message_dict['experiment_id']}")
         print(f"Job ID: {message_dict['job_id']}")
-
-        Subscriber._run_task()
 
         print(" [x] Done")
 
@@ -148,21 +158,30 @@ class Subscriber:
             print("Exiting gracefully")
             self._connection.close()
 
-    @staticmethod
-    def _run_task():
+    def retrieve_job_data(self, bucket, username, project_id,
+                          experiment_id, job_id, local_path):
         """
-        blank slate function to execute something
 
+        This function will download a job file to a specified location with
+        a specified file name locally.
+
+        :param bucket:
+        :param username:
+        :param project_id:
+        :param experiment_id:
+        :param job_id:
+        :param local_path:
         :return:
         """
-        from tests.queue_tests.sample_task import SampleTask
+        storage_master_obj = CompletionStorageInterface(storage_obj=
+                                                        self.storage_obj)
 
-        task_obj = SampleTask()
+        if local_path is None:
+            local_path = f"{job_id}.tar"
 
-        try:
-            number = task_obj.fibonacci(10)
-
-            print(f"fib(10) = {number}")
-        except Exception as e:
-            print("There was an error in executing the task.")
-            print(f"Exception: {e}")
+        storage_master_obj.get_job_data(bucket=bucket,
+                                        username=username,
+                                        project_id=project_id,
+                                        experiment_id=experiment_id,
+                                        job_id=job_id,
+                                        local_path=local_path)
