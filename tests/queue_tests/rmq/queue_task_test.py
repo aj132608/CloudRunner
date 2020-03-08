@@ -11,13 +11,14 @@ if __name__ == "__main__":
                                    completion=True,
                                    submission=False)
 
-    task_obj = Publisher(endpoint="amqp://guest:guest@localhost")
+    task_obj = Publisher(endpoint="amqp://guest:guest@0.tcp.ngrok.io:12474")
 
     try:
         task_obj.send_message(message=message_struct.__dict__,
-                              queue_name="project_queue",
-                              exchange_name="project_exchange")
+                              queue_name="rabbit_queue_1",
+                              exchange_name="rabbit_exchange_1")
         print("Test Passed")
     except Exception as e:
         print("Test Failed")
         print(f"Exception: {e}")
+
