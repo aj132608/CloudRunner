@@ -4,4 +4,4 @@ while [ ! -f $queue_config_path ]; do sleep 1; done
 
 echo "Starting Queue Server"
 sudo touch /.mineai/subscriber_logs.txt
-python3 -m worker.initialize_worker | sudo tee -a /.mineai/subscriber_logs.txt
+python3 -m worker.initialize_worker

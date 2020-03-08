@@ -2,11 +2,17 @@ from queuingservices.managers.queue_master import QueueMaster
 from servicecommon.persistor.local.json.json_persistor import JsonPersistor
 from storage.storage_creator import StorageCreator
 
+import sys
+
 if __name__ == '__main__':
     """
     This server is responsible to initialize the 
     worker.
     """
+
+    original_stdout = sys.stdout
+    log_file = open("/.mineai/subscriber_logs.txt", "w")
+    sys.stdout = log_file
 
     # Load Configs
     config_path = "/.mineai/configs"
@@ -27,3 +33,6 @@ if __name__ == '__main__':
 
     print("Starting Queue Server")
     queue_subscriber.start_server()
+
+    sys.stdout = original_stdout
+    log_file.close()
