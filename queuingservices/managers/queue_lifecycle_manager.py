@@ -26,9 +26,11 @@ class QueueLifecycleManager:
         self.queue_config = queue_config
         self.storage_obj = storage_obj
 
+        print("Queue Config: ", queue_config)
+
         if "type" not in self.queue_config.keys():
-            raise ValueError("Queue type not found. Please update creds.json"
-                             " with one of the following supported queue "
+            raise ValueError(f"Queue type not found. Please update creds.json"
+                             f" with one of the following supported queue "
                              f"types.\n{SUPPORTED_QUEUES}")
 
         self.queue_type = queue_config['type']
