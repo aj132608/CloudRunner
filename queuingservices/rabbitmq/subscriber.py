@@ -117,8 +117,7 @@ class Subscriber:
 
         self.worker_busy = True
 
-    def  start_server(self):
-        print(' [*] Waiting for messages. To exit press CTRL+C')
+    def start_server(self):
 
         """
 
@@ -135,7 +134,7 @@ class Subscriber:
 
         :return:
         """
-        print("Hello from server")
+        print(' [*] Waiting for messages. To exit press CTRL+C')
         try:
             self._channel.basic_consume(
                 queue=self.queue_name,
