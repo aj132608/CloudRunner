@@ -24,4 +24,6 @@ if __name__ == '__main__':
     queue_master = QueueMaster(queue_config=queue_config,
                                storage_obj=storage_object)
     queue_subscriber = queue_master.build_subscribe_object()
+
+    print("Starting Queue Server")
     queue_subscriber.start_server()

@@ -142,7 +142,6 @@ class Subscriber:
                 on_message_callback=self._callback,
                 auto_ack=True,
                 consumer_tag="current consumer")
-            print("Starting Consuming")
             self._channel.start_consuming()
 
         except KeyboardInterrupt:
