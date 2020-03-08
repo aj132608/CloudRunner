@@ -17,9 +17,13 @@ if __name__ == '__main__':
                                           base_file_name='queue_config', folder=config_path)
     queue_config = queue_config_restorer.restore()
 
+    print("Queue Config: ", queue_config)
+
     storage_config_restorer = JsonPersistor(None,
                                           base_file_name='storage_config', folder=config_path)
     storage_config = storage_config_restorer.restore()
+
+    print("Queue Config: ", storage_config)
 
     storage_object = StorageCreator(storage_config).build_storage_object()
 
