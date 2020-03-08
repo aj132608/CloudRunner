@@ -2,6 +2,11 @@
 
 # Set up Logging
 mkdir /.mineai
+mkdir /.mineai/configs
+
+chmod 777 /.mineai
+chmod 777 /.mineai/configs
+
 touch /.mineai/worker_startup_logfile.txt
 exec > >(tee -i /.mineai/worker_startup_logfile.txt)
 exec 2>&1

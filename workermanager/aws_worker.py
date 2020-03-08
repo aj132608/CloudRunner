@@ -9,7 +9,7 @@ import pickle
 from servicecommon.environment_utils import extract_environment_variables
 from servicecommon.scp import scp_send
 from workermanager.woker_utils import memstr_to_int, \
-    _aws_instance_specs, _get_aws_ondemand_prices, persist_essential_configs
+    _aws_instance_specs, _get_aws_ondemand_prices, persist_essential_configs, insert_script_into_startup_script
 
 
 class EC2WorkerManager:
@@ -25,7 +25,7 @@ class EC2WorkerManager:
         :param project_id: Id of the project
         :param worker_dict: Config for the workers
         """
-        self.cloud_dsm_base_path = "~/"
+        self.cloud_dsm_base_path = "."
 
         if not os.path.exists(self.cloud_dsm_base_path):
             os.makedirs(self.cloud_dsm_base_path)
@@ -46,8 +46,8 @@ class EC2WorkerManager:
         """
         resource_name = "ec2"
 
-        env_vars = self.worker_dict.get("env")
-        credentials_dict = extract_environment_variables(env_vars)
+        credentials_dict = self.worker_dict.get("env")
+        # credentials_dict = extract_environment_variables(credentials_dict)
         credentials_dict["region"] = self.worker_dict.get("region")
 
         access_key = credentials_dict['cdsm_compute_access_key']
@@ -288,8 +288,44 @@ class EC2WorkerManager:
             instance = self.get_instance_from_id(instance)
         instance.restart()
 
+    def _construct_startup_script(self, user_script=None):
+        """
+        This function is used to construct the startup script.
+        :param user_script: Location of user startup script
+        :return startup_script: Startup script content as
+        a byte stream
+        """
+        print("##################### Startup Script ##################### \n")
+        base_startup_script_path = os.path.join(os.getcwd(),
+                                                "worker/base_startup_installation.sh")
+
+        with open(base_startup_script_path) as f:
+            base_startup_script = f.read()
+
+        python_script_path = os.path.join(os.getcwd(),
+                                          "shellscripts/shared/python3.7_install.sh")
+        cloud_dsm_clone_path = os.path.join(os.getcwd(),
+                                          "shellscripts/shared/cloud_runner_git_clone.sh")
+        docker_installation = os.path.join(os.getcwd(),
+                                            "shellscripts/shared/docker_installation.sh")
+        queue_initializer = os.path.join(os.getcwd(),
+                                           "shellscripts/shared/start_queue_subscriber.sh")
+
+        startup_script = insert_script_into_startup_script(python_script_path, base_startup_script)
+        startup_script = insert_script_into_startup_script(cloud_dsm_clone_path, startup_script)
+        startup_script = insert_script_into_startup_script(docker_installation, startup_script)
+        startup_script = insert_script_into_startup_script(queue_initializer, startup_script)
+        startup_script = insert_script_into_startup_script(user_script, startup_script)
+
+        print(startup_script)
+
+        print("##################### End Script ##################### \n")
+
+        return startup_script
+
     def start_worker(self, queue_config, storage_config, resources_needed=None, blocking=True,
-                     ssh_keypair=None, timeout=300, ports=None, name=None, image_specs=None):
+                     ssh_keypair=None, timeout=300, ports=None, name=None, image_specs=None,
+                     user_startup_script=None):
         """
         This function is used to start EC2 the instance on AWS.
         :param queue_config: Queue Config
@@ -320,13 +356,7 @@ class EC2WorkerManager:
 
         instance_type = self._select_instance_type(resources_needed)
 
-        # startup_script = self._get_startup_script(
-        #     resources_needed, queue_name, timeout=timeout)
-
-        startup_script_path = os.path.join(os.getcwd(),
-                                           "worker/base_startup_installation.sh")
-        with open(startup_script_path) as f:
-            startup_script = f.read()
+        startup_script = self._construct_startup_script(user_startup_script)
 
         # self.logger.info(
         #     'Starting EC2 instance of type {}'.format(instance_type))
@@ -396,7 +426,7 @@ class EC2WorkerManager:
         configs_local_path = os.path.join(self.cloud_dsm_base_path, "configs")
         configs_local_path = os.path.abspath(configs_local_path)
         persist_essential_configs(queue_config, storage_config, configs_local_path)
-        configs_instance_path = "configs"
+        configs_instance_path = "/.mineai"
 
         # Copy the configs Over SCP to the instance
         print(f"Sending config over SCP to {ip_addr}")
@@ -422,7 +452,7 @@ class EC2WorkerManager:
         instance.terminate()
 
     def create_workers(self, queue_config, storage_config, blocking=True,
-                       ssh_keypair=None, timeout=300, ports=None):
+                       ssh_keypair=None, timeout=300, ports=None, user_startup_script=None):
         """
         This function is used to start EC2 the instance on AWS.
         :param storage_config:
@@ -438,7 +468,7 @@ class EC2WorkerManager:
         num_workers = resources_needed.get("num_workers", 1)
         for _ in range(num_workers):
             self.start_worker(queue_config, storage_config, resources_needed, blocking,
-                              ssh_keypair, timeout, ports)
+                              ssh_keypair, timeout, ports, user_startup_script)
 
     def shutdown(self):
         """

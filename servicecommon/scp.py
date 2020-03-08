@@ -13,19 +13,23 @@ def scp_send(hostname, username, local_filepath,
     from scp import SCPClient
     from paramiko import SSHClient, AutoAddPolicy
 
-    try:
-        ssh = SSHClient()
-        ssh.set_missing_host_key_policy(AutoAddPolicy())
-        ssh.connect(hostname=hostname,
-                    username=username,
-                    key_filename=key_filepath)
-        with SCPClient(ssh.get_transport()) as scp:
-            scp.put(local_filepath, instance_filepath,
-                    recursive=True)
-        return True
-    except Exception as e:
-        print(e)
-        return False
+    sent = False
+
+    while not sent:
+        try:
+            ssh = SSHClient()
+            ssh.set_missing_host_key_policy(AutoAddPolicy())
+            ssh.connect(hostname=hostname,
+                        username=username,
+                        key_filename=key_filepath)
+            with SCPClient(ssh.get_transport()) as scp:
+                scp.put(local_filepath, instance_filepath,
+                        recursive=True)
+            sent = True
+        except Exception as e:
+            print(e)
+
+    return True
 
 def scp_get(hostname, username, local_filepath,
         instance_filepath, key_filepath):

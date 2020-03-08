@@ -133,17 +133,19 @@ class GCloudWorkerManager:
         with open(base_startup_script_path) as f:
             base_startup_script = f.read()
 
+        metadata_fetch = os.path.join(os.getcwd(),
+                                         "shellscripts/gcloud/get_meta_information.sh")
         python_script_path = os.path.join(os.getcwd(),
-                                          "shellscripts/python3.7_install.sh")
+                                          "shellscripts/shared/python3.7_install.sh")
         cloud_dsm_clone_path = os.path.join(os.getcwd(),
-                                          "shellscripts/cloud_runner_git_clone.sh")
+                                          "shellscripts/shared/cloud_runner_git_clone.sh")
         docker_installation = os.path.join(os.getcwd(),
-                                            "shellscripts/docker_installation.sh")
+                                            "shellscripts/shared/docker_installation.sh")
         queue_initializer = os.path.join(os.getcwd(),
-                                           "shellscripts/start_queue_subscriber.sh")
+                                           "shellscripts/shared/start_queue_subscriber.sh")
 
-
-        startup_script = insert_script_into_startup_script(python_script_path, base_startup_script)
+        startup_script = insert_script_into_startup_script(metadata_fetch, base_startup_script)
+        startup_script = insert_script_into_startup_script(python_script_path, startup_script)
         startup_script = insert_script_into_startup_script(cloud_dsm_clone_path, startup_script)
         startup_script = insert_script_into_startup_script(docker_installation, startup_script)
         startup_script = insert_script_into_startup_script(queue_initializer, startup_script)
@@ -242,9 +244,13 @@ class GCloudWorkerManager:
         command = f"gcloud compute scp --recurse " \
                   f"{local_file_path} {username}@{worker_name}:{instance_file_path} " \
                   f"--zone={self._zone}"
-        print(command)
         run_command(command)
 
+    def _scp_configs(self, worker_name, local_file_path,
+                   instance_file_path, username):
+
+        self._scp_files(worker_name, local_file_path,
+                   instance_file_path, username)
         mkdir_command = f"sudo mkdir -p /.mineai"
         self._run_remote_command(mkdir_command, username, worker_name)
 
@@ -276,6 +282,17 @@ class GCloudWorkerManager:
         machine_type = self._generate_machine_type(resources_needed=resources_needed)
 
         startup_script = self._construct_startup_script(user_startup_script)
+
+        configs_local_path = os.path.join(self.cloud_dsm_base_path, "configs")
+        configs_local_path = os.path.abspath(configs_local_path)
+        persist_essential_configs(queue_config,
+                                  storage_config,
+                                  configs_local_path)
+
+        with open(f"{configs_local_path}/queue_config.json") as f:
+            queue_config_byte_str = f.read()
+        with open(f"{configs_local_path}/storage_config.json") as f:
+            storage_config_byte_str = f.read()
 
         config = {
             # 'user-name': "ubuntu",
@@ -315,6 +332,12 @@ class GCloudWorkerManager:
                 'items': [{
                     'key': 'startup-script',
                     'value': startup_script
+                }, {
+                    'key': 'queue-config',
+                    'value': queue_config_byte_str
+                }, {
+                    'key': 'storage-config',
+                    'value': storage_config_byte_str
                 }]
             },
             "scheduling": {
@@ -341,6 +364,9 @@ class GCloudWorkerManager:
 
             config["scheduling"]['onHostMaintenance'] = "TERMINATE"
             config["automaticRestart"] = True
+
+        import shutil
+        shutil.rmtree(configs_local_path)
 
         return config
 
@@ -423,19 +449,19 @@ class GCloudWorkerManager:
 
             self._add_ports(port_map)
 
-            username = "ubuntu"
-            # Persist Queue Config and Studio Config
-            from time import sleep
-            sleep(5)
-            configs_local_path = os.path.join(self.cloud_dsm_base_path, "configs")
-            configs_local_path = os.path.abspath(configs_local_path)
-            persist_essential_configs(queue_config,
-                                      storage_config,
-                                      configs_local_path)
-            self._scp_files(worker_name=name,
-                            local_file_path=configs_local_path,
-                            instance_file_path="./configs",
-                            username=username)
+            # username = "ubuntu"
+            # # Persist Queue Config and Studio Config
+            # from time import sleep
+            # sleep(5)
+            # configs_local_path = os.path.join(self.cloud_dsm_base_path, "configs")
+            # configs_local_path = os.path.abspath(configs_local_path)
+            # persist_essential_configs(queue_config,
+            #                           storage_config,
+            #                           configs_local_path)
+            # self._scp_files(worker_name=name,
+            #                 local_file_path=configs_local_path,
+            #                 instance_file_path="./configs",
+            #                 username=username)
 
             return name
         else:
