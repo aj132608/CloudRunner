@@ -1,7 +1,6 @@
-queue_config_path="/.mineai/configs/queue_config"
+cd /.mineai/CloudRunner
+queue_config_path="/.mineai/configs/queue_config.json"
 while [ ! -f $queue_config_path ]; do sleep 1; done
 
-sudo python -m worker.initialize_worker
-
-
-
+echo "Starting Queue Server"
+sudo python3 -m worker.initialize_worker

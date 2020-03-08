@@ -3,7 +3,7 @@ from storage.aws.s3_store import S3Storage
 from storage.azure.azure_store import AzureStorage
 from storage.gcloud.gcloud_store import GCloudStorage
 
-SUPPORTED_STORAGES = ("minio", "s3", "gcloud", "azure", "local")
+SUPPORTED_STORAGES = ("minio", "s3", "gcloud", "azure", "local", "aws")
 
 
 class StorageCreator:

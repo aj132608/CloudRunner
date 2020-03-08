@@ -92,9 +92,9 @@ def insert_script_into_startup_script(script_to_insert, startup_script_str):
         new_startup_script_lines.append("%s\n" % line)
 
     new_startup_script = "".join(new_startup_script_lines)
-    print('Inserting the following user startup script'
-          ' into the default startup script:')
-    print("\n".join(startup_script_lines))
+    # print('Inserting the following user startup script'
+    #       ' into the default startup script:')
+    # print("\n".join(startup_script_lines))
 
     return new_startup_script
 
@@ -107,8 +107,8 @@ def run_command(command):
         complete_output += output.decode("utf-8")
         if output == b'' and process.poll() is not None:
             break
-        if output:
-            print(output.strip())
+        # if output:
+            # print(output.strip())
     rc = process.poll()
     return rc, complete_output
 

@@ -5,5 +5,3 @@ sudo apt install -y docker.io
 # Start Docker
 sudo systemctl start docker
 sudo systemctl enable docker
-
-mv /CloudRunner CloudRunner

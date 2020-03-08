@@ -34,7 +34,7 @@ storage_config = {
 }
 
 gcwm = GCloudWorkerManager("test-proj2", worker_config)
-gcwm.create_workers(queue_config, storage_config, ports=[9000])
+gcwm.create_workers(queue_config, storage_config, ports=[9000, 12474])
 
 
 # from servicecommon.scp import scp_send

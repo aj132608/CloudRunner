@@ -2,3 +2,5 @@
 sudo git clone https://mohakamg:c469cbaaafe7a1e2b5339f20b360ca9ffc46c649@github.com/aj132608/CloudRunner.git
 sudo mkdir /.mineai
 sudo mv /CloudRunner /.mineai/CloudRunner
+
+pip3 install -r /.mineai/CloudRunner/requirements.txt
