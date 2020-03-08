@@ -1,11 +1,10 @@
+import sys
+import os
+sys.path.extend(os.getcwd())
+
 from queuingservices.managers.queue_master import QueueMaster
 from servicecommon.persistor.local.json.json_persistor import JsonPersistor
 from storage.storage_creator import StorageCreator
-
-import sys
-import os
-
-sys.path.extend(os.getcwd())
 
 if __name__ == '__main__':
     """
