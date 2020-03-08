@@ -1,3 +1,4 @@
+from queuingservices.managers.queue_master import QueueMaster
 from workermanager.gcloud_worker import GCloudWorkerManager
 
 worker_config = {
@@ -32,6 +33,12 @@ storage_config = {
     },
     "endpoint_url": "https://s3-us-west-2.amazonaws.com"
 }
+
+queue = QueueMaster(queue_config)
+queue_lifecycle_object = queue.build_lifecycle_object()
+queue_lifecycle_object.create_queue(queue_config.get("queue_name"))
+queue_lifecycle_object.create_and_bind_exchange(queue_config.get("exchange_name"),
+                                                queue_config.get("queue_name"))
 
 gcwm = GCloudWorkerManager("test-proj2", worker_config)
 gcwm.create_workers(queue_config, storage_config, ports=[9000, 12474])
