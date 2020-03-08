@@ -83,11 +83,10 @@ class GCloudWorkerManager:
             action = "update"
         else:
             action = "create"
-        base_command = f"gcloud compute firewall-rules {action} {self.project_id} --allow"
+        base_command = f"gcloud compute firewall-rules {action} {self.project_id}"
         for port in port_mapping:
             protocol = port_mapping[port]
-            base_command += f" {protocol}:{port}"
-
+            base_command += f" --allow {protocol}:{port}"
         run_command(base_command)
 
     def connect(self):
@@ -127,6 +126,7 @@ class GCloudWorkerManager:
         :return startup_script: Startup script content as
         a byte stream
         """
+        print("##################### Startup Script ##################### \n")
         base_startup_script_path = os.path.join(os.getcwd(),
                                                 "worker/base_startup_installation.sh")
 
@@ -139,12 +139,19 @@ class GCloudWorkerManager:
                                           "shellscripts/cloud_runner_git_clone.sh")
         docker_installation = os.path.join(os.getcwd(),
                                             "shellscripts/docker_installation.sh")
+        queue_initializer = os.path.join(os.getcwd(),
+                                           "shellscripts/start_queue_subscriber.sh")
 
 
         startup_script = insert_script_into_startup_script(python_script_path, base_startup_script)
         startup_script = insert_script_into_startup_script(cloud_dsm_clone_path, startup_script)
         startup_script = insert_script_into_startup_script(docker_installation, startup_script)
+        startup_script = insert_script_into_startup_script(queue_initializer, startup_script)
         startup_script = insert_script_into_startup_script(user_script, startup_script)
+
+        print(startup_script)
+
+        print("##################### End Script ##################### \n")
 
         return startup_script
 
@@ -237,6 +244,9 @@ class GCloudWorkerManager:
                   f"--zone={self._zone}"
         print(command)
         run_command(command)
+
+        mkdir_command = f"sudo mkdir -p /.mineai"
+        self._run_remote_command(mkdir_command, username, worker_name)
 
         copy_command = f"sudo mv {instance_file_path} /.mineai/configs"
         self._run_remote_command(copy_command, username, worker_name)
