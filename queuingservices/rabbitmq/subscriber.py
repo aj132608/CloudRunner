@@ -117,7 +117,7 @@ class Subscriber:
 
         self.worker_busy = True
 
-    def start_server(self):
+    def  start_server(self):
         print(' [*] Waiting for messages. To exit press CTRL+C')
 
         """
@@ -142,6 +142,7 @@ class Subscriber:
                 on_message_callback=self._callback,
                 auto_ack=True,
                 consumer_tag="current consumer")
+            print("Starting Consuming")
             self._channel.start_consuming()
 
         except KeyboardInterrupt:
