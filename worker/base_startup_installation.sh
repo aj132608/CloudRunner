@@ -8,3 +8,7 @@ exec 2>&1
 # Install Git
 sudo apt-get update
 sudo apt-get install -y git-core
+
+# Install Inotify
+sudo apt-get install -y inotify-tools
+

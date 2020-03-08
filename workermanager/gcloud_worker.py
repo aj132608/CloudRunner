@@ -214,6 +214,16 @@ class GCloudWorkerManager:
 
         return machine_type
 
+    def _run_remote_command(self, command, username, instance_name):
+        """
+
+        :param command:
+        :return:
+        """
+        remote_command = f"gcloud compute ssh {username}@{instance_name} --zone={self._zone} --command='{command}'"
+        run_command(remote_command)
+
+
     def _scp_files(self, worker_name, local_file_path,
                    instance_file_path, username):
         """
@@ -227,6 +237,10 @@ class GCloudWorkerManager:
                   f"--zone={self._zone}"
         print(command)
         run_command(command)
+
+        copy_command = f"sudo mv {instance_file_path} /.mineai/configs"
+        self._run_remote_command(copy_command, username, worker_name)
+
 
     def _generate_instance_config(self, resources_needed,
                                   queue_config, storage_config, user_startup_script):
@@ -432,7 +446,7 @@ class GCloudWorkerManager:
         """
         resources_needed = self.worker_dict["resources"]
         num_workers = resources_needed.get("num_workers", 1)
-        user_script = self.worker_dict["user_script"]
+        user_script = self.worker_dict.get("user_script", None)
         for _ in range(num_workers):
             self.start_worker(queue_config, storage_config, resources_needed, blocking,
                               ssh_keypair, timeout, ports, user_script=user_script)
