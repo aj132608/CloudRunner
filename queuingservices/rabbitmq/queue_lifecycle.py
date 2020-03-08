@@ -30,7 +30,6 @@ class QueueLifecycle:
         """
 
         params = pika.URLParameters(self.endpoint)
-
         connection = pika.BlockingConnection(params)
         channel = connection.channel()
 
