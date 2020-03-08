@@ -135,7 +135,7 @@ class Subscriber:
 
         :return:
         """
-
+        print("Hello from server")
         try:
             self._channel.basic_consume(
                 queue=self.queue_name,

@@ -100,7 +100,8 @@ def insert_script_into_startup_script(script_to_insert, startup_script_str):
 
 
 def run_command(command):
-    process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
+    process = subprocess.Popen(shlex.split(command),
+                               stdout=subprocess.PIPE)
     complete_output = ""
     while True:
         output = process.stdout.readline()
