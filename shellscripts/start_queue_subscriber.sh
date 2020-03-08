@@ -13,4 +13,4 @@ queue_config_path="/.mineai/configs/queue_config.json"
 while [ ! -f $queue_config_path ]; do sleep 1; done
 
 chmod +x worker/initialize_worker.py
-python3 -m worker.initialize_worker >> /.mineai/subscriber_logs.txt 2>&1
+python3 -m worker.initialize_worker 1> /.mineai/subscriber_logs.txt 2>&1

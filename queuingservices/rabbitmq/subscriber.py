@@ -3,6 +3,7 @@ import json
 import os
 
 from completionservice.completion_storage_interface import CompletionStorageInterface
+from workermanager.woker_utils import run_command
 
 
 class Subscriber:
@@ -94,6 +95,7 @@ class Subscriber:
 
         elif message_dict['submission']:
             print("Submission was selected!")
+            run_command("sudo touch /sub")
 
         print(f"Bucket: {message_dict['bucket_name']}")
         print(f"Username: {message_dict['username']}")

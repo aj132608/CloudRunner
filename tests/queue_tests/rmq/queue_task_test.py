@@ -8,8 +8,8 @@ if __name__ == "__main__":
                                    experiment_id="experiment0",
                                    project_id="project0",
                                    job_id="job0",
-                                   completion=True,
-                                   submission=False)
+                                   completion=False,
+                                   submission=True)
 
     task_obj = Publisher(endpoint="amqp://guest:guest@0.tcp.ngrok.io:12474")
 
