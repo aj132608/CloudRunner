@@ -95,16 +95,16 @@ class GCloudStorage:
         except Exception as e:
             print(f"Failed to delete GCloud Bucket, {e}")
 
-    def persist_file(self, file_name, local_file_path, bucket):
+    def persist_file(self, bucket, local_file_path, key):
         """
         This function stores the given file in an already existing bucket
-        :param file_name: Name of the file that needs to be attached while uploading
+        :param key: Name of the file that needs to be attached while uploading
         :param local_file_path: Location of the file.
         :param bucket: Name/Instance of the bucket to store into.
         :returns nothing:
         """
         bucket_obj = self.get_bucket_object(bucket)
-        blob = bucket_obj.blob(file_name)
+        blob = bucket_obj.blob(key)
         try:
             blob.upload_from_filename(local_file_path)
         except Exception as e:
@@ -137,23 +137,23 @@ class GCloudStorage:
 
         return blob_list
 
-    def download_file(self, file_name, local_file_path,
+    def download_file(self, key, local_file_path,
                       bucket):
         """
         This function downloads a given file to a specified path from
         the bucket specified.
-        :param file_name: Name/Folder/Path of the file to download
+        :param key: Name/Folder/Path of the file to download
         :param local_file_path: Path of the file to where to download
         :param bucket: Name of the Bucket to download from.
         :returns nothing:
         """
         files = self.get_files_in_bucket(bucket, True)
-        if file_name not in files:
-            raise FileNotFoundError(f"File {file_name} does not "
+        if key not in files:
+            raise FileNotFoundError(f"File {key} does not "
                                     f"exist in bucket {bucket}")
 
         bucket_obj = self.get_bucket_object(bucket)
-        blob_object = bucket_obj.blob(file_name)
+        blob_object = bucket_obj.blob(key)
 
         with open(local_file_path, 'wb') as data:
             blob_object.download_to_file(data)

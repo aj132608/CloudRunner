@@ -1,9 +1,6 @@
 import pika
-import json
-import os
 
-from completionservice.completion_storage_interface import CompletionStorageInterface
-from workermanager.woker_utils import run_command
+from queuingservices.callback import callback_handler
 
 
 class Subscriber:
@@ -59,7 +56,7 @@ class Subscriber:
 
         self._connection, self._channel = self._connect()
 
-    def _callback(self, ch, method, props, body):
+    def _process_first_message(self, ch, method, props, body):
 
         """
 
@@ -79,31 +76,7 @@ class Subscriber:
         """
 
         print(f" [x] Recieved {body}")
-
-        message_dict = json.loads(body)
-
-        if message_dict['completion']:
-            # build the local path to download job data
-            local_path = f"{os.getcwd()}/{message_dict['experiment_id']}/{message_dict['job_id']}.tar"
-
-            self.retrieve_job_data(bucket=message_dict['bucket_name'],
-                                   username=message_dict['username'],
-                                   project_id=message_dict['project_id'],
-                                   experiment_id=message_dict['experiment_id'],
-                                   job_id=message_dict['job_id'],
-                                   local_path=local_path)
-
-        elif message_dict['submission']:
-            print("Submission was selected!")
-            run_command("sudo touch /sub")
-
-        print(f"Bucket: {message_dict['bucket_name']}")
-        print(f"Username: {message_dict['username']}")
-        print(f"Project ID: {message_dict['project_id']}")
-        print(f"Experiment ID: {message_dict['experiment_id']}")
-        print(f"Job ID: {message_dict['job_id']}")
-
-        print(" [x] Done")
+        callback_handler(body, self.storage_obj)
 
     def _stop_consuming(self):
 
@@ -150,7 +123,7 @@ class Subscriber:
         try:
             self._channel.basic_consume(
                 queue=self.queue_name,
-                on_message_callback=self._callback,
+                on_message_callback=self._process_first_message,
                 auto_ack=True,
                 consumer_tag="current consumer")
             self._channel.start_consuming()
@@ -159,30 +132,4 @@ class Subscriber:
             print("Exiting gracefully")
             self._connection.close()
 
-    def retrieve_job_data(self, bucket, username, project_id,
-                          experiment_id, job_id, local_path):
-        """
 
-        This function will download a job file to a specified location with
-        a specified file name locally.
-
-        :param bucket:
-        :param username:
-        :param project_id:
-        :param experiment_id:
-        :param job_id:
-        :param local_path:
-        :return:
-        """
-        storage_master_obj = CompletionStorageInterface(storage_obj=
-                                                        self.storage_obj)
-
-        if local_path is None:
-            local_path = f"{job_id}.tar"
-
-        storage_master_obj.get_job_data(bucket=bucket,
-                                        username=username,
-                                        project_id=project_id,
-                                        experiment_id=experiment_id,
-                                        job_id=job_id,
-                                        local_path=local_path)

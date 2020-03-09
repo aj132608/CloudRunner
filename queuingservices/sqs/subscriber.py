@@ -1,10 +1,8 @@
 import boto3
-import json
-import os
 
 from botocore.client import Config
 
-from completionservice.completion_storage_interface import CompletionStorageInterface
+from queuingservices.callback import callback_handler
 
 
 class Subscriber:
@@ -144,34 +142,13 @@ class Subscriber:
 
         string_message = current_message['Body']
 
-        message_dict = json.loads(string_message)
+        print(f" [x] Recieved {string_message}")
 
-        if message_dict['completion']:
-            # build the local path to download job data
-            local_path = f"{os.getcwd()}/{message_dict['experiment_id']}/{message_dict['job_id']}.tar"
-
-            self.retrieve_job_data(bucket=message_dict['bucket_name'],
-                                   username=message_dict['username'],
-                                   project_id=message_dict['project_id'],
-                                   experiment_id=message_dict['experiment_id'],
-                                   job_id=message_dict['job_id'],
-                                   local_path=local_path)
-
-        elif message_dict['submission']:
-            print(f"Submission was selected")
-
-        print(f"Bucket: {message_dict['bucket_name']}")
-        print(f"Username: {message_dict['username']}")
-        print(f"Project ID: {message_dict['project_id']}")
-        print(f"Experiment ID: {message_dict['experiment_id']}")
-        print(f"Job ID: {message_dict['job_id']}")
+        callback_handler(string_message, self.storage_obj)
 
         receipt_handle = current_message['ReceiptHandle']
 
         self._delete_message(receipt_handle=receipt_handle)
-
-        number = Subscriber._run_task()
-        print(f"fib(10) = {number}")
 
     def _delete_message(self, receipt_handle):
 
@@ -187,24 +164,6 @@ class Subscriber:
             QueueUrl=self.queue_url,
             ReceiptHandle=receipt_handle
         )
-
-    @staticmethod
-    def _run_task():
-
-        """
-
-        Generic task that executes whenever a message is received.
-
-        :return:
-        """
-
-        from tests.queue_tests.sample_task import SampleTask
-
-        task_obj = SampleTask()
-
-        number = task_obj.fibonacci(10)
-
-        return number
 
     def start_server(self):
         """
@@ -235,31 +194,3 @@ class Subscriber:
                 print(f"Exception: {e}")
                 print("Closing Worker")
                 break
-
-    def retrieve_job_data(self, bucket, username, project_id,
-                          experiment_id, job_id, local_path):
-        """
-
-        This function will download a job file to a specified location with
-        a specified file name locally.
-
-        :param bucket:
-        :param username:
-        :param project_id:
-        :param experiment_id:
-        :param job_id:
-        :param local_path:
-        :return:
-        """
-        storage_master_obj = CompletionStorageInterface(storage_obj=
-                                                        self.storage_obj)
-
-        if local_path is None:
-            local_path = f"{job_id}.tar"
-
-        storage_master_obj.get_job_data(bucket=bucket,
-                                        username=username,
-                                        project_id=project_id,
-                                        experiment_id=experiment_id,
-                                        job_id=job_id,
-                                        local_path=local_path)
