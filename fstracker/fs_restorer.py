@@ -1,6 +1,5 @@
 import os
 
-# from fstracker.fs_tracker import FileSystemTracker
 from servicecommon.persistor.local.tar.tar_persistor import TarPersistor
 
 

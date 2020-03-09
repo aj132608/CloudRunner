@@ -114,7 +114,7 @@ class S3Storage:
 
         return buckets
 
-    def persist_file(self, bucket, local_file_path, s3_key=None):
+    def persist_file(self, bucket, local_file_path, key=None):
         """
         :param bucket: Name/Instance of the bucket to store into.
         :param s3_key: Path on the bucket
@@ -122,22 +122,22 @@ class S3Storage:
         :return:
         """
         file = open(local_file_path, 'rb')
-        if s3_key is None:
-            s3_key = os.path.basename(local_file_path)
+        if key is None:
+            key = os.path.basename(local_file_path)
         self.storage_client.put_object(Bucket=bucket,
-                                       Key=(s3_key), Body=local_file_path)
+                                       Key=(key), Body=local_file_path)
         file.close()
 
-    def download_file(self, bucket, key, local_storage_path):
+    def download_file(self, key, local_file_path, bucket):
         """
         This function downloads a given file to a specified path from
         the buckets root.
-        :param local_storage_path: Path to store
+        :param local_file_path: Path to store
         :param key: Path of the file to where to download
         :param bucket: Name/Object of the Bucket to download from.
         :returns nothing:
         """
-        with open(local_storage_path, 'wb') as data:
+        with open(local_file_path, 'wb') as data:
             self.storage_client.download_fileobj(bucket, key, data)
 
     def get_files_in_bucket(self, bucket, return_names=False):

@@ -1,8 +1,9 @@
 echo " ############# Installing Python ############# \n "
 
-sudo add-apt-repository -y ppa:deadsnakes/ppa
-sudo apt-get update
-sudo apt-get install -y python3.7
+add-apt-repository -y ppa:deadsnakes/ppa
+apt-get update
+apt-get install -y python3.7
 
 echo " ############# Installing PIP ############# \n "
-sudo apt install -y python3-pip
+apt install -y python3-pip
+python3.7 -m pip install --upgrade pip

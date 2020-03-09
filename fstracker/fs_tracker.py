@@ -187,7 +187,6 @@ class FileSystemTracker:
         """
         import shutil
         shutil.rmtree(self.temp_project_path)
-        # shutil.rmtree(f"../{self.temp_project_path}")
 
     def create_env_var_export_script(self):
         env_vars = self.create_user_env_var_dict()
