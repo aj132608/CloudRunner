@@ -7,7 +7,7 @@ import hashlib
 import pickle
 
 from servicecommon.environment_utils import extract_environment_variables
-from servicecommon.scp import scp_send
+from servicecommon.ssh_utils import scp_send, ssh_exec_cmd
 from workermanager.woker_utils import memstr_to_int, \
     _aws_instance_specs, _get_aws_ondemand_prices, persist_essential_configs, insert_script_into_startup_script
 
@@ -18,19 +18,17 @@ class EC2WorkerManager:
     for a specific project.
     """
 
-    def __init__(self, project_id, worker_dict):
+    def __init__(self, project_id, experiment_id, worker_dict):
         """
         This class sets up a worker manager given the
         config dictionary.
         :param project_id: Id of the project
         :param worker_dict: Config for the workers
         """
-        self.cloud_dsm_base_path = "."
-
-        if not os.path.exists(self.cloud_dsm_base_path):
-            os.makedirs(self.cloud_dsm_base_path)
+        self.cloud_dsm_base_path = os.path.join(os.path.expanduser("~"), ".mineai/")
 
         self.project_id = project_id
+        self.experiment_id = experiment_id
         self.worker_dict = worker_dict
         self.compute_resource, self.compute_client = \
             self.connect()
@@ -95,13 +93,14 @@ class EC2WorkerManager:
         self.worker_dict = worker_dict
         self.connect()
 
-    def _generate_instance_name(self):
+    def _generate_instance_name(self, type):
         """
         This function generates a unique ID for the worker attached with
         the project.
         :returns: A unique instance Id
         """
-        return self.project_id + "-" + str(uuid.uuid4())
+        id = self.project_id + "-" + str(uuid.uuid4()) + "-" + type
+        return id
 
     def _select_instance_type(self, resources_needed):
         """
@@ -172,6 +171,12 @@ class EC2WorkerManager:
         :returns groupid: Id of the group created on AWS
         """
         ports = sorted([p for p in set(ports)])
+
+        docker_tcp_ports = [2376, 2377, 7946]
+        docker_udp_ports = [7946, 4789]
+
+        ports.extend(docker_tcp_ports)
+
         group_name = f"{self.project_id}_" \
                      f"{hashlib.sha256(pickle.dumps(sorted(ports))).hexdigest()}"
 
@@ -196,6 +201,16 @@ class EC2WorkerManager:
             for port in ports:
                 ip_permissions.append({
                     'IpProtocol': 'tcp',
+                    'FromPort': int(port),
+                    'ToPort': int(port),
+                    'IpRanges': [{
+                        'CidrIp': '0.0.0.0/0'
+                    }]
+                })
+
+            for port in docker_udp_ports:
+                ip_permissions.append({
+                    'IpProtocol': 'udp',
                     'FromPort': int(port),
                     'ToPort': int(port),
                     'IpRanges': [{
@@ -288,14 +303,14 @@ class EC2WorkerManager:
             instance = self.get_instance_from_id(instance)
         instance.restart()
 
-    def _construct_startup_script(self, user_script=None):
+    def _construct_startup_script(self, user_scripts=None, type="worker"):
         """
         This function is used to construct the startup script.
         :param user_script: Location of user startup script
         :return startup_script: Startup script content as
         a byte stream
         """
-        print("##################### Startup Script ##################### \n")
+        # print("##################### Startup Script ##################### \n")
         base_startup_script_path = os.path.join(os.getcwd(),
                                                 "worker/base_startup_installation.sh")
 
@@ -305,27 +320,31 @@ class EC2WorkerManager:
         python_script_path = os.path.join(os.getcwd(),
                                           "shellscripts/shared/python3.7_install.sh")
         cloud_dsm_clone_path = os.path.join(os.getcwd(),
-                                          "shellscripts/shared/cloud_runner_git_clone.sh")
+                                            "shellscripts/shared/cloud_runner_git_clone.sh")
         docker_installation = os.path.join(os.getcwd(),
-                                            "shellscripts/shared/docker_installation.sh")
-        queue_initializer = os.path.join(os.getcwd(),
-                                           "shellscripts/shared/start_queue_subscriber.sh")
+                                           "shellscripts/shared/docker_installation.sh")
 
         startup_script = insert_script_into_startup_script(python_script_path, base_startup_script)
         startup_script = insert_script_into_startup_script(cloud_dsm_clone_path, startup_script)
         startup_script = insert_script_into_startup_script(docker_installation, startup_script)
-        startup_script = insert_script_into_startup_script(queue_initializer, startup_script)
-        startup_script = insert_script_into_startup_script(user_script, startup_script)
+        if type == "worker":
+            queue_initializer = os.path.join(os.getcwd(),
+                                             "shellscripts/shared/start_queue_subscriber.sh")
+            startup_script = insert_script_into_startup_script(queue_initializer, startup_script)
 
-        print(startup_script)
+        if user_scripts is not None:
+            for user_script in user_scripts:
+                startup_script = insert_script_into_startup_script(user_script, startup_script)
 
-        print("##################### End Script ##################### \n")
+        # print(startup_script)
+
+        # print("##################### End Script ##################### \n")
 
         return startup_script
 
     def start_worker(self, queue_config, storage_config, resources_needed=None, blocking=True,
                      ssh_keypair=None, timeout=300, ports=None, name=None, image_specs=None,
-                     user_startup_script=None):
+                     user_scripts=None, type="worker"):
         """
         This function is used to start EC2 the instance on AWS.
         :param queue_config: Queue Config
@@ -341,22 +360,24 @@ class EC2WorkerManager:
         """
         if ports is None:
             ports = [22]
+        else:
+            ports.append(22)
         if resources_needed is None:
             resources_needed = {}
 
         # Check if Image Specs are specified
         if image_specs is not None:
-            image_type = image_specs["image_type"] # More like Version of OS
+            image_type = image_specs["image_type"]  # More like Version of OS
         else:
             image_type = None
         imageid = self._get_image_id(image_type)
 
         if name is None:
-            name = self._generate_instance_name()
+            name = self._generate_instance_name(type)
 
         instance_type = self._select_instance_type(resources_needed)
 
-        startup_script = self._construct_startup_script(user_startup_script)
+        startup_script = self._construct_startup_script(user_scripts, type)
 
         # self.logger.info(
         #     'Starting EC2 instance of type {}'.format(instance_type))
@@ -425,21 +446,87 @@ class EC2WorkerManager:
         # Persist Queue Config and Studio Config
         configs_local_path = os.path.join(self.cloud_dsm_base_path, "configs")
         configs_local_path = os.path.abspath(configs_local_path)
-        persist_essential_configs(queue_config, storage_config, configs_local_path)
-        configs_instance_path = "/.mineai"
+        persist_essential_configs({
+            "config": queue_config,
+            "filename": "queue_config"
+        },
+            {
+                "config": storage_config,
+                "filename": "storage_config"
+            },
+            persist_path=configs_local_path)
+        configs_instance_path = "/.mineai/"
 
         # Copy the configs Over SCP to the instance
         print(f"Sending config over SCP to {ip_addr}")
-        files_sent = False
-        while not files_sent:
-            try:
-                files_sent = scp_send(hostname=ip_addr,
-                         username="ubuntu",
-                         local_filepath=configs_local_path,
-                         instance_filepath=configs_instance_path,
-                         key_filepath=key_pair_path)
-            except:
-                pass
+        scp_send(hostname=ip_addr,
+                 username="ubuntu",
+                 local_filepath=configs_local_path,
+                 instance_filepath=configs_instance_path,
+                 key_filepath=key_pair_path)
+
+        # Hold until Docker is installed
+        print("Waiting for Docker to be installed")
+        installed = False
+        while not installed:
+            command = "sudo docker"
+            _, ssh_stdout, ssh_stderr = ssh_exec_cmd(hostname=ip_addr,
+                                                     username="ubuntu",
+                                                     key_filepath=key_pair_path, command=command)
+            out, err = ssh_stdout.read().splitlines(), \
+                       ssh_stderr.read().splitlines()
+            installed = len(err) > 1
+
+
+        if type == "master":
+            print("Initializing Master .... ")
+            master_initialized = False
+            while not master_initialized:
+                try:
+                    command = f"sudo docker swarm init --advertise-addr {ip_addr}"
+                    _, _, _ = ssh_exec_cmd(hostname=ip_addr,
+                                           username="ubuntu",
+                                           key_filepath=key_pair_path, command=command)
+
+                    command = f"sudo docker swarm join-token worker"
+
+
+                    _, ssh_stdout, ssh_stderr = ssh_exec_cmd(hostname=ip_addr,
+                                                             username="ubuntu",
+                                                             key_filepath=key_pair_path, command=command)
+
+                    token_lines = ssh_stdout.read().splitlines()
+                    token = token_lines[-2].decode().strip()
+                    master_initialized = True
+                    print("Master Setup complete..")
+                    break
+                except Exception as e:
+                    print(e)
+                    continue
+
+            master_token_path = os.path.join(self.cloud_dsm_base_path,
+                                             f"{self.project_id}/{self.experiment_id}")
+            if not os.path.exists(master_token_path):
+                os.makedirs(master_token_path)
+            with open(os.path.join(master_token_path, "master_node_connect_token.txt"), 'w') as f:
+                f.write(token)
+        elif type == "worker":
+            print("Connecting Worker to Master .... ")
+            master_token_path = os.path.join(self.cloud_dsm_base_path,
+                                             f"{self.project_id}/{self.experiment_id}")
+            with open(os.path.join(master_token_path, "master_node_connect_token.txt"), 'r') as f:
+                command = f.read()
+
+            command = f"sudo {command}"
+
+            _, ssh_stdout, ssh_stderr = ssh_exec_cmd(hostname=ip_addr,
+                                                     username="ubuntu",
+                                                     key_filepath=key_pair_path, command=command)
+
+            swarm_join_response = ssh_stdout.read().splitlines()
+            swarm_join_error = ssh_stderr.read().splitlines()
+            print(f"Swarm Join Out: {swarm_join_response}")
+            print(f"Swarm Join Error: {swarm_join_error}")
 
     def _stop_instance(self, instance):
         """
@@ -451,8 +538,7 @@ class EC2WorkerManager:
             instance = self.get_instance_from_id(instance)
         instance.terminate()
 
-    def create_workers(self, queue_config, storage_config, blocking=True,
-                       ssh_keypair=None, timeout=300, ports=None, user_startup_script=None):
+    def create_workers(self, queue_config, storage_config):
         """
         This function is used to start EC2 the instance on AWS.
         :param storage_config:
@@ -466,9 +552,14 @@ class EC2WorkerManager:
         """
         resources_needed = self.worker_dict["resources"]
         num_workers = resources_needed.get("num_workers", 1)
+        user_scripts = self.worker_dict.get("user_scripts", None)
+        blocking = True
+        ssh_keypair = self.worker_dict.get("ssh_keypair", None)
+        timeout = self.worker_dict.get("timeout", 300)
+        ports = self.worker_dict.get("ports", None)
         for _ in range(num_workers):
             self.start_worker(queue_config, storage_config, resources_needed, blocking,
-                              ssh_keypair, timeout, ports, user_startup_script)
+                              ssh_keypair, timeout, ports, user_scripts)
 
     def shutdown(self):
         """

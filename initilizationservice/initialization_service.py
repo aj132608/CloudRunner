@@ -1,165 +1,139 @@
+from initilizationservice.config_handler import ConfigHandler
+from queuingservices.managers.queue_master import QueueMaster
+from storage.storage_creator import StorageCreator
+from workermanager.aws_worker import EC2WorkerManager
+from workermanager.gcloud_worker import GCloudWorkerManager
+from workermanager.woker_utils import persist_essential_configs, run_command
+
 import os
-
-from fstracker.fs_tracker import FileSystemTracker
-from servicecommon.parsers.config_parser import ConfigParser
-from storage.aws.s3_store import S3Store
-from storage.gcloud import GCloudStore
-from services.queuingservices.rabbitmq.task_submit import TaskSubmit
-from workermanager.aws_worker import, EC2WorkerManager
-from workermanager.gcloud_worker import GCloudWorker
-
-
-# GCLOUD CREDS: https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.171849056.175403659.1582490113-1979849865.1581803480
+import copy
+import uuid
 
 class InitializationService:
 
-    def __init__(self, config_path, project_id,
-                 persist_file_system=True,
-                 create_instances=True, initialize_queue=True):
+    def __init__(self, project_name, username, config_path):
         """
-
-        :param config_path:
+        The constructor initializes the config file, the project
+        and the user name.
+        :param project_name: Project name to be assigned
+        :param username: Username to be attached to this project.
+        This will later on be used for security purposes
+        :param config_path: Path of the config
         """
-        self.config_path = config_path
-        self.config_parser = ConfigParser(self.config_path)
-        self.project_id = project_id
+        config_parser = ConfigHandler(config_path, project_name=project_name)
+        self.compute_config = config_parser.get_compute_config()
+        self.storage_config = config_parser.get_storage_config()
+        self.queue_config = config_parser.get_queue_config()
+        self.master_node_config = config_parser.get_master_node_config()
 
-        self.computes = self.config_parser.get_computing_environments()
-        self.storage_config = self.config_parser.get_storage_config()
-        self.queue_config = self.config_parser.get_queue_config()
+        self.project_name = project_name
+        self.username = username
+        self.experiment_id = uuid.uuid4()
 
-        self.storage_obj = self.set_storage_object()
+        storage_creator = StorageCreator(self.storage_config)
+        self.storage_object = storage_creator.build_storage_object()
 
-        if persist_file_system:
-            self.persist_inital_filesystem()
+        self.cloud_runner_base_path = os.path.join(os.path.expanduser("~"), ".mineai")
+        self.config_path = os.path.join(self.cloud_runner_base_path, "configs")
 
-        if create_instances:
-            self.create_instances()
+        self.completion_service_queue_config = copy.deepcopy(self.queue_config)
+        if self.completion_service_queue_config["type"] == "rmq":
+            self.completion_service_queue_config["exchange_name"] = f"mine_ai_{project_name}_completion_service"
+        elif self.completion_service_queue_config["type"] == "sqs":
+            if "queue_url" in self.completion_service_queue_config:
+                del self.completion_service_queue_config["queue_url"]
+        self.completion_service_queue_config["queue_name"] = f"mine_ai_{project_name}_completion_service"
 
-        if initialize_queue:
-            self.task_submitter = self.initialize_queue()
+        persist_essential_configs({
+            "config": self.completion_service_queue_config,
+            "filename": "completion_service_queue_config"
+        },
+            {
+                "config": self.storage_config,
+                "filename": "completion_service_storage_config"
+            },
+            persist_path=self.config_path)
+
+        self.initialize_queue()
+        # self.completion_service_process = self.initialize_completion_service()
+
+        self.compute_managers = {}
+        self.create_instances()
+
+    def initialize_completion_service(self):
+        """
+        This function spins up the completion service to
+        listen for events and fetch back the results of the jobs.
+        :returns nothing:
+        """
+        queue_config_path = f"{self.config_path}/completion_service_queue_config.json"
+        storage_config_path = f"{self.config_path}/completion_service_storage_config.json"
+
+        command = f"python -m completionservice.completion_service --queue_config_path={queue_config_path} " \
+                  f"--storage_config_path={storage_config_path} --project_name={self.project_name}"
+        _, complete_output, process = run_command(command, False)
+        print(f"Completion Service PID: {process.pid}")
+        return process
 
     def initialize_queue(self):
         """
-
-        :return:
+        This function creates the queues required fi they don't
+        already exist.
+        :return nothing:
         """
-        queue_config = self.config_parser.get_queue_config()
-        if queue_config.get("type") == "rmq":
-            task_submitter = TaskSubmit(queue_name=queue_config.get("queue_name"),
-                                        exchange=queue_config.get("exchange_name"),
-                                        endpoint=queue_config.get("endpoint_url"))
-        task_submitter.establish_connection()
-        return task_submitter
+        queue_master = QueueMaster(self.queue_config)
+        queue_lifecycle_object = queue_master.build_lifecycle_object()
+        queue_lifecycle_object.create_queue(self.queue_config["queue_name"])
+        queue_lifecycle_object.create_queue(self.completion_service_queue_config["queue_name"])
 
-    def persist_inital_filesystem(self):
-        """
+    def _create_master_node(self):
+        if self.master_node_config is None:
+            import random
+            master_node_provider = random.choice(list(self.compute_config.keys()))
+            print("Master Node hosted On: ", master_node_provider)
+            compute_type_config = self.compute_config[master_node_provider]
+        else:
+            master_node_provider = self.master_node_config.get("type")
+            compute_type_config = self.master_node_config
 
-        :return:
-        """
-        fs_tracker = FileSystemTracker(os.getcwd(),
-                                       f"~/.cloudrunner/{self.project_id}/temp",
-                                       self.storage_obj,
-                                       project_name=self.project_id,
-                                       project_id=self.project_id,
-                                       config=self.config_parser.config,
-                                       config_path=self.config_path)
-        fs_tracker.persist()
+        resources_needed = compute_type_config["resources"]
+        user_scripts = compute_type_config.get("user_scripts", None)
+        blocking = True
+        ssh_keypair = compute_type_config.get("ssh_keypair", None)
+        timeout = compute_type_config.get("timeout", 300)
+        ports = compute_type_config.get("ports", None)
+
+        if master_node_provider in ["aws", "ec2"]:
+            compute_obj = EC2WorkerManager(self.project_name, self.experiment_id, compute_type_config)
+
+        elif master_node_provider == "gcloud":
+            compute_obj = GCloudWorkerManager(self.project_name, self.experiment_id, compute_type_config)
+
+        compute_obj.start_worker(self.queue_config, self.storage_config, resources_needed, blocking,
+                      ssh_keypair, timeout, ports, user_scripts, type="master")
+
+
 
     def create_instances(self):
         """
-
-        :return:
-        """
-        if "AWS" in self.computes:
-            aws_config = self.config_parser.get_compute_config("AWS")
-            aws_worker = EC2WorkerManager(self.project_id, aws_config)
-            aws_worker.create_workers(queue_name=None, )
-
-        # if "GCloud" in self.computes:
-        #     gcloud_creds = self._build_gcloud_creds()
-        #     resource_dict = self.config_parser.get_compute_resource_allocation("GCloud")
-        #     resource_dict["zone"] = self.config_parser.get_compute_config("GCloud").get("zone")
-        #     gcloud_workers = GCloudWorker(gcloud_creds,
-        #                                   resource_dict, self.project_id)
-        #     gcloud_workers.create_workers()
-
-    def _determine_storage(self):
+        This function initializes the instances.
+        :returns nothing:
         """
 
-        :return:
-        """
-        storage_type = self.storage_config.get("type")
-        if storage_type in ("s3", "minio"):
-            return "AWS"
-        elif storage_type in ["gcloud"]:
-            return "GCloud"
-        else:
-            return "local"
+        self._create_master_node()
 
-    def _build_aws_storage_creds(self):
-        """
-
-        :return:
-        """
-        aws_env = self.storage_config.get("env")
-        cdsm_aws_access_key = os.getenv(aws_env["cdsm_storage_access_key"])
-        cdsm_aws_secret_key = os.getenv(aws_env["cdsm_storage_secret_key"])
-
-        credentials_dict = {
-            "access_key": cdsm_aws_access_key,
-            "secret_key": cdsm_aws_secret_key,
-            "endpoint_url": self.storage_config.get("endpoint_url"),
-            "region": self.storage_config.get("region")
-        }
-
-        return credentials_dict
-
-    def _build_aws_instance_creds(self):
-        """
-
-        :return:
-        """
-        aws_env = self.config_parser.get_compute_env("AWS")
-        cdsm_aws_access_key = os.getenv(aws_env["cdsm_compute_access_key"])
-        cdsm_aws_secret_key = os.getenv(aws_env["cdsm_compute_secret_key"])
-
-        credentials_dict = {
-            "access_key": cdsm_aws_access_key,
-            "secret_key": cdsm_aws_secret_key
-        }
-
-        return credentials_dict
-
-    def _build_gcloud_creds(self):
-        """
-
-        :return:
-        """
-        gcloud_env = self.config_parser.get_compute_env("GCloud")
-        cdsm_google_cred_path = os.getenv(gcloud_env["cdsm_google_cred_path"])
-
-        return cdsm_google_cred_path
-
-    def set_storage_object(self):
-        """
-
-        :return:
-        """
-        # Build up storage
-        storage_type = self._determine_storage()
-        if storage_type == "AWS":
-            credentials_dict = self._build_aws_storage_creds()
-            storage_obj = S3Store(credentials_dict, self.project_id)
-        elif storage_type == "GCloud":
-            credentials_path = self._build_gcloud_creds()
-            storage_obj = GCloudStore(credentials_path, self.project_id)
-        else:
-            # Local persistor goes here
-            storage_obj = None
-
-        return storage_obj
+        for compute_type in self.compute_config.keys():
+            compute_type_config = self.compute_config[compute_type]
+            if compute_type in ["aws", "ec2"]:
+                compute_obj = EC2WorkerManager(self.project_name, self.experiment_id, compute_type_config)
+                compute_obj.create_workers(self.queue_config, self.storage_config)
+                self.compute_managers[compute_type] = compute_obj
+            elif compute_type == "gcloud":
+                compute_obj = GCloudWorkerManager(self.project_name,self.experiment_id, compute_type_config)
+                compute_obj.create_workers(self.queue_config, self.storage_config)
+                self.compute_managers[compute_type] = compute_obj
 
 
-ins = InitializationService("/Users/mo/Desktop/mineai/Cloud Runner Extras/configs/config",
-                            project_id="edys")
+ins = InitializationService(config_path="/Users/mo/Desktop/mineai/Cloud Runner Extras/configs/config",
+                            username="mohak.kant",
+                            project_name="cluster-test")

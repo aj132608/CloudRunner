@@ -240,25 +240,3 @@ class FileSystemTracker:
         self.storage_communicator.set_file_path(tarred_fs)
         self.storage_communicator.persist()
         self._cleanup()
-
-
-#### AWS/MINIO Test ####
-# credentials_dict = {
-#     'endpoint_url': 'http://127.0.0.1:9000',
-#     'access_key': 'minioadmin',
-#     'secret_key': 'minioadmin',
-#     'region': None
-# }
-# storage_obj = S3Store(credentials_dict)
-#
-# fst = FileSystemTracker(os.getcwd(), "../../temp/test_proj/", storage_obj, project_name="test-project-mineai")
-# fst.persist_filesystem()
-
-
-#### GCloud Store Test ####
-# credentials_path = 'my-project1-254915-805e652a60d3.json'
-# storage_obj = GCloudStore(credentials_path=credentials_path)
-#
-# fst = FileSystemTracker(os.getcwd(), "../../temp/test_proj/", storage_obj,
-#                         project_name="test-project-mineai", job_id="test_job")
-# fst.persist_filesystem()

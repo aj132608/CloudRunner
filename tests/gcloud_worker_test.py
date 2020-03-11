@@ -41,7 +41,7 @@ queue_lifecycle_object.create_and_bind_exchange(queue_config.get("exchange_name"
                                                 queue_config.get("queue_name"))
 
 gcwm = GCloudWorkerManager("test-proj2", worker_config)
-gcwm.create_workers(queue_config, storage_config, ports=[9000, 12474])
+gcwm.create_workers(queue_config, storage_config)
 
 
 # from servicecommon.scp import scp_send

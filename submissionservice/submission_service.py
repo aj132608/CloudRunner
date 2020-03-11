@@ -2,7 +2,7 @@ import calendar
 import time
 
 from fstracker.fs_tracker import FileSystemTracker
-from servicecommon.parsers.config_parser import ConfigParser
+from initilizationservice.config_handler import ConfigParser
 from queuingservices.job_struct import JobStruct
 from queuingservices.rabbitmq.publisher import Publisher
 

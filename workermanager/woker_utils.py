@@ -99,38 +99,48 @@ def insert_script_into_startup_script(script_to_insert, startup_script_str):
     return new_startup_script
 
 
-def run_command(command):
+def run_command(command, wait_for_output=True):
     process = subprocess.Popen(shlex.split(command),
                                stdout=subprocess.PIPE)
-    complete_output = ""
-    while True:
-        output = process.stdout.readline()
-        complete_output += output.decode("utf-8")
-        if output == b'' and process.poll() is not None:
-            break
-        # if output:
-            # print(output.strip())
-    rc = process.poll()
-    return rc, complete_output
+
+    if wait_for_output:
+        complete_output = ""
+        while True:
+            output = process.stdout.readline()
+            complete_output += output.decode("utf-8")
+            if output == b'' and process.poll() is not None:
+                break
+            # if output:
+                # print(output.strip())
+        rc = process.poll()
+    else:
+        rc, complete_output = None, None
+    return rc, complete_output, process
 
 
-def persist_essential_configs(queue_config, storage_config, persist_path):
+def persist_essential_configs(queue, storage, persist_path):
     """
     Persists the queue_config and the storage_config for the
     worker as a JSON
     :return:
     """
     configs_path = persist_path
-    if not os.path.exists(configs_path):
-        os.makedirs(configs_path)
+    # if not os.path.exists(configs_path):
+    #     os.makedirs(configs_path)
+
+    queue_config = queue["config"]
+    queue_file_name = queue["filename"]
+
+    storage_config = storage["config"]
+    storage_file_name = storage["filename"]
 
     json_persistor = JsonPersistor(queue_config,
-                                   "queue_config",
+                                   queue_file_name,
                                    configs_path)
     json_persistor.persist()
 
     json_persistor = JsonPersistor(storage_config,
-                                   "storage_config",
+                                   storage_file_name,
                                    configs_path)
     json_persistor.persist()
 

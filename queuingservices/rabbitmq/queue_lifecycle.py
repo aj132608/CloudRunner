@@ -19,14 +19,10 @@ class QueueLifecycle:
         self._channel = channel
 
     def _connect(self):
-
         """
-
         This function will connect to the RabbitMQ server and create a
         connection and channel object
-
         :return: connection and channel objects
-
         """
 
         params = pika.URLParameters(self.endpoint)
@@ -64,22 +60,17 @@ class QueueLifecycle:
         successfully created and bound.
 
         """
-
-        global EXCHANGE_TYPE
-
+        self.reconnect(self.endpoint)
         try:
             self._channel.exchange_declare(exchange=exchange_name,
                                            exchange_type=EXCHANGE_TYPE)
 
             self._channel.queue_bind(exchange=exchange_name,
                                      queue=queue_name)
-
-            return True
         except Exception as e:
             print("create_and_bind_exchange() failed.")
             print(f"Exception: {e}")
-
-            return False
+        self._connection.close()
 
     def create_queue(self, queue_name):
 
@@ -93,16 +84,14 @@ class QueueLifecycle:
         successfully created.
 
         """
-
+        self.reconnect(self.endpoint)
         try:
             self._channel.queue_declare(queue=queue_name,
                                         durable=True)
-            return True
         except Exception as e:
             print(f"The following queue could not be created: {queue_name}")
             print(f"Exception: {e}")
-
-            return False
+        self._connection.close()
 
     def delete_queue(self, queue_name):
 
@@ -116,13 +105,10 @@ class QueueLifecycle:
         successfully created.
 
         """
-
+        self.reconnect(self.endpoint)
         try:
             self._channel.queue_delete(queue=queue_name)
-
-            return True
         except Exception as e:
             print(f"The following queue could not be deleted: {queue_name}")
             print(f"Exception: {e}")
-
-            return False
+        self._connection.close()

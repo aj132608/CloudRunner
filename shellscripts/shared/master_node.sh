@@ -1,0 +1,1 @@
+docker swarm init --advertise-addr MANAGER_IP
