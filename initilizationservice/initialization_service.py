@@ -9,6 +9,7 @@ import os
 import copy
 import uuid
 
+
 class InitializationService:
 
     def __init__(self, project_name, username, config_path):
@@ -75,6 +76,16 @@ class InitializationService:
         print(f"Completion Service PID: {process.pid}")
         return process
 
+    def _create_completion_submission_docker_compose(self):
+        """
+
+        :return:
+        """
+        docker_compse_dict = {
+            "version": "3.7",
+
+        }
+
     def initialize_queue(self):
         """
         This function creates the queues required fi they don't
@@ -110,9 +121,7 @@ class InitializationService:
             compute_obj = GCloudWorkerManager(self.project_name, self.experiment_id, compute_type_config)
 
         compute_obj.start_worker(self.queue_config, self.storage_config, resources_needed, blocking,
-                      ssh_keypair, timeout, ports, user_scripts, type="master")
-
-
+                                 ssh_keypair, timeout, ports, user_scripts, type="master")
 
     def create_instances(self):
         """
@@ -129,7 +138,7 @@ class InitializationService:
                 compute_obj.create_workers(self.queue_config, self.storage_config)
                 self.compute_managers[compute_type] = compute_obj
             elif compute_type == "gcloud":
-                compute_obj = GCloudWorkerManager(self.project_name,self.experiment_id, compute_type_config)
+                compute_obj = GCloudWorkerManager(self.project_name, self.experiment_id, compute_type_config)
                 compute_obj.create_workers(self.queue_config, self.storage_config)
                 self.compute_managers[compute_type] = compute_obj
 
