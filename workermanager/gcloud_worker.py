@@ -2,12 +2,16 @@ import math
 import os
 import time
 import uuid
+from logzero import logger
 
 from google.oauth2 import service_account
 
 from servicecommon.ssh_utils import ssh_exec_cmd
-from workermanager.woker_utils import memstr_to_int, persist_essential_configs, run_command, \
-    insert_script_into_startup_script
+from utils import run_command, persist_essential_configs
+from workermanager.woker_utils import memstr_to_int, \
+    insert_script_into_startup_script, initialize_worker_type_in_cluster
+
+MASTER_TOKEN_NAME = "master_node_connect_token.txt"
 
 
 class GCloudWorkerManager:
@@ -16,17 +20,16 @@ class GCloudWorkerManager:
     a specific project.
     """
 
-    def __init__(self, project_id, experiment_id, worker_dict):
+    def __init__(self, project_id, experiment_id, worker_dict, experiment_dir,
+                 logger_obj=None):
         """
         This class sets up a worker manager given the
         config dictionary.
         :param project_id: Id of the project
         :param worker_dict: Config for the workers
         """
-        self.cloud_dsm_base_path = os.path.join(os.path.expanduser("~"), ".mineai")
-
-        # key_name = "ssh_gcloud"
-        # self.key_path = os.path.join(self.cloud_dsm_base_path, key_name)
+        self.experiment_dir = experiment_dir
+        self.logger = logger or logger_obj
 
         self._credentials = None
         self._google_project_id = None
@@ -134,7 +137,6 @@ class GCloudWorkerManager:
         :return startup_script: Startup script content as
         a byte stream
         """
-        # print("##################### Startup Script ##################### \n")
         base_startup_script_path = os.path.join(os.getcwd(),
                                                 "worker/base_startup_installation.sh")
 
@@ -143,32 +145,29 @@ class GCloudWorkerManager:
 
         metadata_fetch = os.path.join(os.getcwd(),
                                       "shellscripts/gcloud/get_meta_information.sh")
-        python_script_path = os.path.join(os.getcwd(),
-                                          "shellscripts/shared/python3.7_install.sh")
-        cloud_dsm_clone_path = os.path.join(os.getcwd(),
-                                            "shellscripts/shared/cloud_runner_git_clone.sh")
+
         docker_installation = os.path.join(os.getcwd(),
                                            "shellscripts/shared/docker_installation.sh")
-
-
-
         startup_script = insert_script_into_startup_script(metadata_fetch, base_startup_script)
         startup_script = insert_script_into_startup_script(docker_installation, startup_script)
-        startup_script = insert_script_into_startup_script(python_script_path, startup_script)
-        startup_script = insert_script_into_startup_script(cloud_dsm_clone_path, startup_script)
 
-        if type == "worker":
-            queue_initializer = os.path.join(os.getcwd(),
-                                             "shellscripts/shared/start_queue_subscriber.sh")
-            startup_script = insert_script_into_startup_script(queue_initializer, startup_script)
+        if type == "master":
+            python_script_path = os.path.join(os.getcwd(),
+                                              "shellscripts/shared/python3.7_install.sh")
+            cloud_dsm_clone_path = os.path.join(os.getcwd(),
+                                                "shellscripts/shared/cloud_runner_git_clone.sh")
+
+            startup_script = insert_script_into_startup_script(python_script_path, startup_script)
+            startup_script = insert_script_into_startup_script(cloud_dsm_clone_path, startup_script)
+
+        # if type == "worker":
+        #     queue_initializer = os.path.join(os.getcwd(),
+        #                                      "shellscripts/shared/start_queue_subscriber.sh")
+        #     startup_script = insert_script_into_startup_script(queue_initializer, startup_script)
 
         if user_scripts is not None:
             for user_script in user_scripts:
                 startup_script = insert_script_into_startup_script(user_script, startup_script)
-
-        # print(startup_script)
-
-        # print("##################### End Script ##################### \n")
 
         return startup_script
 
@@ -296,8 +295,7 @@ class GCloudWorkerManager:
 
         startup_script = self._construct_startup_script(user_scripts, type)
 
-        configs_local_path = os.path.join(self.cloud_dsm_base_path, "configs")
-        configs_local_path = os.path.abspath(configs_local_path)
+        configs_local_path = os.path.join(self.experiment_dir, "configs")
         persist_essential_configs({
             "config": queue_config,
             "filename": "queue_config"
@@ -445,9 +443,6 @@ class GCloudWorkerManager:
         :param name: Name to attach to the instance
         :returns nothing:
         """
-        if ssh_keypair is not None:
-            print('ssh keypairs are not supported ' +
-                  'for google workers')
         if resources_needed is None:
             resources_needed = {}
 
@@ -465,7 +460,7 @@ class GCloudWorkerManager:
 
         if blocking:
             self._wait_for_operation(op['name'])
-            print('worker {} created'.format(name))
+            self.logger.info('worker {} created'.format(name))
 
             self.instances = self.get_workers()
 
@@ -481,69 +476,12 @@ class GCloudWorkerManager:
             current_user_path = os.path.expanduser("~")
             key_pair_path = os.path.join(current_user_path, ".ssh/google_compute_engine")
 
-            print("Waiting for Docker to be installed")
-            installed = False
-            while not installed:
-                command = "sudo docker"
-                _, ssh_stdout, ssh_stderr = ssh_exec_cmd(hostname=ip_addr,
-                                                         username="ubuntu",
-                                                         key_filepath=key_pair_path, command=command)
-                out, err = ssh_stdout.read().splitlines(), \
-                           ssh_stderr.read().splitlines()
-                installed = len(err) > 1
-                from time import sleep
-                sleep(5)
-
-
-            if type == "master":
-                print("Initializing Master .... ")
-                master_initialized = False
-                while not master_initialized:
-                    try:
-                        command = f"sudo docker swarm init --advertise-addr {ip_addr}"
-                        _, _, _ = ssh_exec_cmd(hostname=ip_addr,
-                                               username="ubuntu",
-                                               key_filepath=key_pair_path, command=command)
-
-                        command = f"sudo docker swarm join-token worker"
-
-                        _, ssh_stdout, ssh_stderr = ssh_exec_cmd(hostname=ip_addr,
-                                                                 username="ubuntu",
-                                                                 key_filepath=key_pair_path, command=command)
-
-                        token_lines = ssh_stdout.read().splitlines()
-                        token = token_lines[-2].decode().strip()
-                        master_initialized = True
-                        print("Master Setup complete..")
-                        break
-                    except Exception as e:
-                        print(e)
-                        continue
-
-                master_token_path = os.path.join(self.cloud_dsm_base_path,
-                                                 f"{self.project_id}/{self.experiment_id}")
-                if not os.path.exists(master_token_path):
-                    os.makedirs(master_token_path)
-                with open(os.path.join(master_token_path, "master_node_connect_token.txt"), 'w') as f:
-                    f.write(token)
-
-            elif type == "worker":
-                print("Connecting Worker to Master .... ")
-                master_token_path = os.path.join(self.cloud_dsm_base_path,
-                                                 f"{self.project_id}/{self.experiment_id}")
-                with open(os.path.join(master_token_path, "master_node_connect_token.txt"), 'r') as f:
-                    command = f.read()
-
-                command = f"sudo {command}"
-
-                _, ssh_stdout, ssh_stderr = ssh_exec_cmd(hostname=ip_addr,
-                                                         username="ubuntu",
-                                                         key_filepath=key_pair_path, command=command)
-
-                swarm_join_response = ssh_stdout.read().splitlines()
-                swarm_join_error = ssh_stderr.read().splitlines()
-                print(f"Swarm Join Out: {swarm_join_response}")
-                print(f"Swarm Join Error: {swarm_join_error}")
+        initialize_worker_type_in_cluster(type,
+                                          self.experiment_dir,
+                                          ip_addr,
+                                          key_pair_path,
+                                          self.logger,
+                                          MASTER_TOKEN_NAME)
 
     def create_workers(self, queue_config, storage_config):
         """
@@ -577,7 +515,7 @@ class GCloudWorkerManager:
         :param operation:
         :return:
         """
-        print('Waiting for operation {} to finish...'.
+        self.logger.info('Waiting for operation {} to finish...'.
               format(operation))
         while True:
             result = self.compute_client.zoneOperations().get(
@@ -586,7 +524,7 @@ class GCloudWorkerManager:
                 operation=operation).execute()
 
             if result['status'] == 'DONE':
-                print("done.")
+                self.logger.info("Done Initializing.")
                 if 'error' in result:
                     raise Exception(result['error'])
                 return result

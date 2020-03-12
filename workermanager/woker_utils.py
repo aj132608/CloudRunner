@@ -1,13 +1,6 @@
 import os
-import random
-import shlex
-import string
-
-import subprocess
-
 import yaml
-
-from servicecommon.persistor.local.json.json_persistor import JsonPersistor
+from servicecommon.ssh_utils import ssh_exec_cmd
 
 _aws_instance_specs = {
     'c4.large': {
@@ -53,9 +46,75 @@ _aws_instance_specs = {
 }
 
 
-def rand_string(length):
-    return "".join([random.choice(string.ascii_letters + string.digits)
-                    for n in range(length)])
+def initialize_worker_type_in_cluster(type, experiment_dir, ip_addr, key_pair_path, logger,
+                                      master_token_filepath):
+
+    logger.info("Waiting for Docker to be installed")
+    installed = False
+    while not installed:
+        command = "sudo docker"
+        _, ssh_stdout, ssh_stderr = ssh_exec_cmd(hostname=ip_addr,
+                                                 username="ubuntu",
+                                                 key_filepath=key_pair_path, command=command)
+        out, err = ssh_stdout.read().splitlines(), \
+                   ssh_stderr.read().splitlines()
+        installed = len(err) > 1
+        from time import sleep
+        sleep(5)
+
+    if type == "master":
+        logger.info("Initializing Master .... ")
+        master_initialized = False
+        while not master_initialized:
+            try:
+                command = f"sudo docker swarm init --advertise-addr {ip_addr}"
+                _, _, _ = ssh_exec_cmd(hostname=ip_addr,
+                                       username="ubuntu",
+                                       key_filepath=key_pair_path, command=command)
+
+                command = f"sudo docker swarm join-token worker"
+
+                _, ssh_stdout, ssh_stderr = ssh_exec_cmd(hostname=ip_addr,
+                                                         username="ubuntu",
+                                                         key_filepath=key_pair_path, command=command)
+
+                token_lines = ssh_stdout.read().splitlines()
+                token = token_lines[-2].decode().strip()
+                master_initialized = True
+                logger.info("Master Setup complete..")
+                break
+            except Exception as e:
+                logger.warning(e)
+                continue
+
+        with open(os.path.join(experiment_dir, master_token_filepath), 'w') as f:
+            f.write(token)
+
+    elif type == "worker":
+        logger.info("Connecting Worker to Master .... ")
+        with open(os.path.join(experiment_dir, master_token_filepath), 'r') as f:
+            command = f.read()
+
+        command = f"sudo {command}"
+        worker_initialized = False
+        while not worker_initialized:
+            _, ssh_stdout, ssh_stderr = ssh_exec_cmd(hostname=ip_addr,
+                                                     username="ubuntu",
+                                                     key_filepath=key_pair_path, command=command)
+
+            swarm_join_response = ssh_stdout.read().splitlines()
+            swarm_join_error = ssh_stderr.read().splitlines()
+
+            if swarm_join_error:
+                if swarm_join_error[0].decode().find("node is already part of a swarm") != -1:
+                    worker_initialized = True
+
+            if (len(swarm_join_response) > 1 and
+                    not len(swarm_join_error)):
+                worker_initialized = True
+
+            logger.debug(f"Swarm Join Out: {swarm_join_response}")
+            logger.debug(f"Swarm Join Error: {swarm_join_error}")
 
 
 def insert_script_into_startup_script(script_to_insert, startup_script_str):
@@ -97,53 +156,6 @@ def insert_script_into_startup_script(script_to_insert, startup_script_str):
     # print("\n".join(startup_script_lines))
 
     return new_startup_script
-
-
-def run_command(command, wait_for_output=True):
-    process = subprocess.Popen(shlex.split(command),
-                               stdout=subprocess.PIPE)
-
-    if wait_for_output:
-        complete_output = ""
-        while True:
-            output = process.stdout.readline()
-            complete_output += output.decode("utf-8")
-            if output == b'' and process.poll() is not None:
-                break
-            # if output:
-                # print(output.strip())
-        rc = process.poll()
-    else:
-        rc, complete_output = None, None
-    return rc, complete_output, process
-
-
-def persist_essential_configs(queue, storage, persist_path):
-    """
-    Persists the queue_config and the storage_config for the
-    worker as a JSON
-    :return:
-    """
-    configs_path = persist_path
-    # if not os.path.exists(configs_path):
-    #     os.makedirs(configs_path)
-
-    queue_config = queue["config"]
-    queue_file_name = queue["filename"]
-
-    storage_config = storage["config"]
-    storage_file_name = storage["filename"]
-
-    json_persistor = JsonPersistor(queue_config,
-                                   queue_file_name,
-                                   configs_path)
-    json_persistor.persist()
-
-    json_persistor = JsonPersistor(storage_config,
-                                   storage_file_name,
-                                   configs_path)
-    json_persistor.persist()
-
 
 def _get_aws_ondemand_prices(instances=_aws_instance_specs.keys()):
     """

@@ -70,27 +70,6 @@ class SubmissionService:
         task_submittor = self.create_queue_submitter(queue_name)
         task_submittor.submit(job_message)
 
-    @staticmethod
-    def generate_task_id(base_word=None):
-        """
 
-        This function will generate a task id with a given or default base word
-
-
-        :param base_word: an optional argument if you wanted a specific word for your task. It defaults to 'task'
-        :return: task_id: unique string generated for each task submitted
-        """
-
-        # check to see if you should add the default base word
-        if base_word is None:
-            base_word = "task"
-
-        # generate a number
-        id_number = calendar.timegm(time.gmtime())
-
-        # assemble the task id
-        task_id = f"{base_word}_{id_number}"
-
-        return task_id
 
 

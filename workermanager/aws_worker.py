@@ -5,11 +5,14 @@ import botocore
 import yaml
 import hashlib
 import pickle
+from logzero import logger
 
-from servicecommon.environment_utils import extract_environment_variables
 from servicecommon.ssh_utils import scp_send, ssh_exec_cmd
+from utils import persist_essential_configs
 from workermanager.woker_utils import memstr_to_int, \
-    _aws_instance_specs, _get_aws_ondemand_prices, persist_essential_configs, insert_script_into_startup_script
+    _aws_instance_specs, _get_aws_ondemand_prices, insert_script_into_startup_script, initialize_worker_type_in_cluster
+
+MASTER_TOKEN_NAME = "master_node_connect_token.txt"
 
 
 class EC2WorkerManager:
@@ -18,14 +21,16 @@ class EC2WorkerManager:
     for a specific project.
     """
 
-    def __init__(self, project_id, experiment_id, worker_dict):
+    def __init__(self, project_id, experiment_id, worker_dict, experiment_dir,
+                 logger_obj=None):
         """
         This class sets up a worker manager given the
         config dictionary.
         :param project_id: Id of the project
         :param worker_dict: Config for the workers
         """
-        self.cloud_dsm_base_path = os.path.join(os.path.expanduser("~"), ".mineai/")
+        self.experiment_dir = experiment_dir
+        self.logger = logger or logger_obj
 
         self.project_id = project_id
         self.experiment_id = experiment_id
@@ -187,8 +192,8 @@ class EC2WorkerManager:
             groupid = response['SecurityGroups'][0]['GroupId']
 
         except botocore.exceptions.ClientError as e:
-            print("Error creating security group!")
-            print(e)
+            self.logger.error("Error creating security group!")
+            self.logger.info(e)
             response = self.compute_client.create_security_group(
                 GroupName=group_name,
                 Description='opens ports {} in MineAI Cloud DSM workers'
@@ -268,17 +273,17 @@ class EC2WorkerManager:
             # Check if we have a .pem file for it
             if os.path.exists(key_path):
                 # If we do - do nothing
-                print("Using existing Key Value Pair")
+                self.logger.info("Using existing Key Value Pair")
                 return
             else:
                 # If we do not have the .pem file but an existing
                 # key name
-                print("Deleting Old. Creating new Key Value Pair")
+                self.logger.info("Deleting Old. Creating new Key Value Pair")
                 self.compute_client.delete_key_pair(KeyName=key_name)
                 create_new_key_val_pair = True
 
         except:
-            print("Creating new Key Value Pair")
+            self.logger.info("Creating new Key Value Pair")
             create_new_key_val_pair = True
 
         if create_new_key_val_pair:
@@ -310,35 +315,33 @@ class EC2WorkerManager:
         :return startup_script: Startup script content as
         a byte stream
         """
-        # print("##################### Startup Script ##################### \n")
         base_startup_script_path = os.path.join(os.getcwd(),
                                                 "worker/base_startup_installation.sh")
 
         with open(base_startup_script_path) as f:
             base_startup_script = f.read()
 
-        python_script_path = os.path.join(os.getcwd(),
-                                          "shellscripts/shared/python3.7_install.sh")
-        cloud_dsm_clone_path = os.path.join(os.getcwd(),
-                                            "shellscripts/shared/cloud_runner_git_clone.sh")
         docker_installation = os.path.join(os.getcwd(),
                                            "shellscripts/shared/docker_installation.sh")
+        startup_script = insert_script_into_startup_script(docker_installation, base_startup_script)
 
-        startup_script = insert_script_into_startup_script(python_script_path, base_startup_script)
-        startup_script = insert_script_into_startup_script(cloud_dsm_clone_path, startup_script)
-        startup_script = insert_script_into_startup_script(docker_installation, startup_script)
-        if type == "worker":
-            queue_initializer = os.path.join(os.getcwd(),
-                                             "shellscripts/shared/start_queue_subscriber.sh")
-            startup_script = insert_script_into_startup_script(queue_initializer, startup_script)
+        if type == "master":
+            python_script_path = os.path.join(os.getcwd(),
+                                              "shellscripts/shared/python3.7_install.sh")
+            cloud_dsm_clone_path = os.path.join(os.getcwd(),
+                                                "shellscripts/shared/cloud_runner_git_clone.sh")
+
+            startup_script = insert_script_into_startup_script(python_script_path, startup_script)
+            startup_script = insert_script_into_startup_script(cloud_dsm_clone_path, startup_script)
+
+        # if type == "worker":
+        #     queue_initializer = os.path.join(os.getcwd(),
+        #                                      "shellscripts/shared/start_queue_subscriber.sh")
+        #     startup_script = insert_script_into_startup_script(queue_initializer, startup_script)
 
         if user_scripts is not None:
             for user_script in user_scripts:
                 startup_script = insert_script_into_startup_script(user_script, startup_script)
-
-        # print(startup_script)
-
-        # print("##################### End Script ##################### \n")
 
         return startup_script
 
@@ -416,7 +419,7 @@ class EC2WorkerManager:
             kwargs['KeyName'] = ssh_keypair["key_name"]
         else:
             key_name = f"{self.project_id}_key"
-            key_pair_path = os.path.join(self.cloud_dsm_base_path, f"{key_name}.pem")
+            key_pair_path = os.path.join(self.experiment_dir, f"{key_name}.pem")
             self.create_key_pair(key_name, key_pair_path)
             kwargs['KeyName'] = key_name
 
@@ -438,13 +441,13 @@ class EC2WorkerManager:
                     instance_data = response['Reservations'][0]['Instances'][0]
                     ip_addr = instance_data.get('PublicIpAddress')
                     if ip_addr:
-                        print("ip address: {}".format(ip_addr))
+                        self.logger.info("ip address: {}".format(ip_addr))
                         break
                 except BaseException as e:
                     pass
 
         # Persist Queue Config and Studio Config
-        configs_local_path = os.path.join(self.cloud_dsm_base_path, "configs")
+        configs_local_path = os.path.join(self.experiment_dir, "configs")
         configs_local_path = os.path.abspath(configs_local_path)
         persist_essential_configs({
             "config": queue_config,
@@ -455,78 +458,22 @@ class EC2WorkerManager:
                 "filename": "storage_config"
             },
             persist_path=configs_local_path)
-        configs_instance_path = "/.mineai/"
+        configs_instance_path = f"/.mineai/"
 
         # Copy the configs Over SCP to the instance
-        print(f"Sending config over SCP to {ip_addr}")
+        self.logger.info(f"Sending config over SCP to {ip_addr}")
         scp_send(hostname=ip_addr,
                  username="ubuntu",
                  local_filepath=configs_local_path,
                  instance_filepath=configs_instance_path,
                  key_filepath=key_pair_path)
 
-        # Hold until Docker is installed
-        print("Waiting for Docker to be installed")
-        installed = False
-        while not installed:
-            command = "sudo docker"
-            _, ssh_stdout, ssh_stderr = ssh_exec_cmd(hostname=ip_addr,
-                                                     username="ubuntu",
-                                                     key_filepath=key_pair_path, command=command)
-            out, err = ssh_stdout.read().splitlines(), \
-                       ssh_stderr.read().splitlines()
-            installed = len(err) > 1
-
-
-        if type == "master":
-            print("Initializing Master .... ")
-            master_initialized = False
-            while not master_initialized:
-                try:
-                    command = f"sudo docker swarm init --advertise-addr {ip_addr}"
-                    _, _, _ = ssh_exec_cmd(hostname=ip_addr,
-                                           username="ubuntu",
-                                           key_filepath=key_pair_path, command=command)
-
-                    command = f"sudo docker swarm join-token worker"
-
-
-                    _, ssh_stdout, ssh_stderr = ssh_exec_cmd(hostname=ip_addr,
-                                                             username="ubuntu",
-                                                             key_filepath=key_pair_path, command=command)
-
-                    token_lines = ssh_stdout.read().splitlines()
-                    token = token_lines[-2].decode().strip()
-                    master_initialized = True
-                    print("Master Setup complete..")
-                    break
-                except Exception as e:
-                    print(e)
-                    continue
-
-            master_token_path = os.path.join(self.cloud_dsm_base_path,
-                                             f"{self.project_id}/{self.experiment_id}")
-            if not os.path.exists(master_token_path):
-                os.makedirs(master_token_path)
-            with open(os.path.join(master_token_path, "master_node_connect_token.txt"), 'w') as f:
-                f.write(token)
-        elif type == "worker":
-            print("Connecting Worker to Master .... ")
-            master_token_path = os.path.join(self.cloud_dsm_base_path,
-                                             f"{self.project_id}/{self.experiment_id}")
-            with open(os.path.join(master_token_path, "master_node_connect_token.txt"), 'r') as f:
-                command = f.read()
-
-            command = f"sudo {command}"
-
-            _, ssh_stdout, ssh_stderr = ssh_exec_cmd(hostname=ip_addr,
-                                                     username="ubuntu",
-                                                     key_filepath=key_pair_path, command=command)
-
-            swarm_join_response = ssh_stdout.read().splitlines()
-            swarm_join_error = ssh_stderr.read().splitlines()
-            print(f"Swarm Join Out: {swarm_join_response}")
-            print(f"Swarm Join Error: {swarm_join_error}")
+        initialize_worker_type_in_cluster(type,
+                                          self.experiment_dir,
+                                          ip_addr,
+                                          key_pair_path,
+                                          self.logger,
+                                          MASTER_TOKEN_NAME)
 
     def _stop_instance(self, instance):
         """

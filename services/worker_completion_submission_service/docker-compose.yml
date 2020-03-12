@@ -1,0 +1,20 @@
+services:
+  subscriber:
+    build:
+      args:
+      - PYTHON_IMAGE_VERSION=3.7-stretch
+      context: .
+      dockerfile: Dockerfile
+      environment:
+      - BASE_CONFIG_PATH=/.mineai
+    expose:
+    - 18420
+    - 22
+    ports:
+    - 18420:18420
+    - '22:22'
+    restart: always
+    tty: true
+    volumes:
+    - /.mineai:/.mineai
+version: '3.7'

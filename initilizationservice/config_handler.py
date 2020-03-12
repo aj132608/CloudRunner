@@ -23,16 +23,35 @@ class ConfigHandler:
         json_restorer = JsonPersistor(None, base_file_name=config_name,
                                       folder=config_folder)
         self.config = json_restorer.restore()
-        self.project_name = project_name
+        self.config_type = self.config.get("type", "runnable")
 
+        self.project_name = project_name
         self.config = self.extract_env()
         self.initialize_queue_default()
+
+        self.assign_ports_to_configs()
+
+    def get_ports(self):
+        """
+        This function returns the ports
+        """
+        return self.config.get("compute").get("ports", [])
+
+    def assign_ports_to_configs(self):
+        """
+        This function assigns the ports from the general
+        compute to each individual compute.
+        """
+        compute_config = self.get_compute_config()
+        for compute_type in compute_config.keys():
+            compute_config[compute_type]["ports"] = self.get_ports()
+
 
     def get_compute_config(self):
         """
         This function returns the compute config
         """
-        return self.config.get("compute")
+        return self.config.get("compute").get("type")
 
     def get_compute_type_config(self, compute_type):
         """
@@ -46,37 +65,37 @@ class ConfigHandler:
         """
         This function extracts the required environment variables and
         replaces them in the config.
-        :returns restored_env_config: Config with the restored env vars
+        :returns config_copy: Config with the restored env vars
         """
         import copy
-        restored_env_config = {}
 
         config_copy = copy.deepcopy(self.config)
-
         # Restore Compute
-        compute_config = config_copy.get("compute")
+        compute_config = config_copy.get("compute").get("type")
         for compute in compute_config:
             config = compute_config[compute]
             env = config.get("env", None)
             if env is not None:
                 config["env"] = extract_environment_variables(env)
-            restored_env_config["compute"] = compute_config
+
+        master_node_config = config_copy.get("master_node")
+        env = master_node_config.get("env", None)
+        if env is not None:
+            master_node_config["env"] = extract_environment_variables(env)
 
         # Restore Storage
         storage_config = config_copy.get("storage_config")
         storage_env = storage_config.get("env", None)
         if storage_env is not None:
             storage_config["env"] = extract_environment_variables(storage_env)
-        restored_env_config["storage"] = storage_config
 
         # Restore Queue
         queue_config = config_copy.get("queue_config")
         queue_env = queue_config.get("env", None)
         if queue_env is not None:
             queue_config["env"] = extract_environment_variables(queue_env)
-        restored_env_config["queue"] = queue_config
 
-        return restored_env_config
+        return config_copy
 
     def initialize_queue_default(self):
         """
@@ -112,13 +131,13 @@ class ConfigHandler:
         """
         This function returns the storage config
         """
-        return self.config.get("storage")
+        return self.config.get("storage_config")
 
     def get_queue_config(self):
         """
         This function returns the queue config
         """
-        return self.config.get("queue")
+        return self.config.get("queue_config")
 
     def get_master_node_config(self):
         """

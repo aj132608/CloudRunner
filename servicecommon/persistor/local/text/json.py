@@ -1,7 +1,7 @@
 import json
 import os
 
-from framework.interfaces.persistence.persistence import Persistence
+from servicecommon.interfaces.persistence import Persistence
 
 
 class TextJsonPersistor(Persistence):

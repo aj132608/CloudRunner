@@ -20,7 +20,7 @@ class JobStorageInterface:
         :return:
         """
         # Construct the key to send to the storage interface class
-        key = f"/{username}/{project_id}/{experiment_id}/{variant}/{job_id}.tar"
+        key = f"{username}/{project_id}/{experiment_id}/{variant}/{job_id}.tar"
         self._storage_obj.persist_file(key=key,
                                        bucket=bucket,
                                        local_file_path=local_path)
@@ -40,7 +40,7 @@ class JobStorageInterface:
         :return:
         """
         # Construct the key to send to the storage interface class
-        key = f"/{username}/{project_id}/{experiment_id}/{variant}/{job_id}.tar"
+        key = f"{username}/{project_id}/{experiment_id}/{variant}/{job_id}.tar"
         self._storage_obj.download_file(key=key,
                                         bucket=bucket,
                                         local_file_path=local_path)

@@ -11,3 +11,4 @@ azure-storage-blob
 pyyaml
 scp
 awscli
+logzero

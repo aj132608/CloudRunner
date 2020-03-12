@@ -2,7 +2,7 @@ import tarfile
 import os
 from tqdm import trange
 
-from framework.interfaces.persistence.persistence import Persistence
+from servicecommon.interfaces.persistence import Persistence
 
 
 class TarPersistor(Persistence):

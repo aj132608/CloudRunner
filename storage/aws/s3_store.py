@@ -86,6 +86,8 @@ class S3Storage:
                                                            CreateBucketConfiguration={
                                                                'LocationConstraint': region
                                                            })
+            else:
+                bucket = self.get_bucket_object(bucket_name)
         else:
             print(f"Creating new bucket")
             try:
@@ -96,7 +98,6 @@ class S3Storage:
             except Exception as e:
                 print(f"Failed to create bucket: {e}")
                 bucket = False
-
         return bucket
 
     def get_buckets(self, return_names=True):

@@ -1,5 +1,5 @@
-from framework.interfaces.persistence.persistor import Persistor
-from framework.interfaces.persistence.restorer import Restorer
+from servicecommon.interfaces.persistence.persistor import Persistor
+from servicecommon.interfaces.persistence.restorer import Restorer
 
 
 class Persistence(Persistor, Restorer):
